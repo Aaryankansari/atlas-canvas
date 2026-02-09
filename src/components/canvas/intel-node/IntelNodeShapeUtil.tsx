@@ -6,7 +6,7 @@ import {
   TLResizeInfo,
   resizeBox,
 } from "tldraw";
-import { IntelNodeShape, entityIcons } from "./types";
+import { IntelNodeShape } from "./types";
 import { IntelNodeComponent } from "./IntelNodeComponent";
 
 export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
@@ -41,8 +41,8 @@ export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
 
   getDefaultProps(): IntelNodeShape["props"] {
     return {
-      w: 260,
-      h: 160,
+      w: 280,
+      h: 170,
       label: "Unknown Entity",
       entityType: "general",
       riskLevel: "low",
@@ -90,10 +90,10 @@ export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
       <rect
         width={shape.props.w}
         height={shape.props.h}
-        rx={12}
-        ry={12}
+        rx={16}
+        ry={16}
         fill="none"
-        stroke="hsl(190, 100%, 50%)"
+        stroke="rgba(99, 179, 237, 0.6)"
         strokeWidth={1.5}
       />
     );

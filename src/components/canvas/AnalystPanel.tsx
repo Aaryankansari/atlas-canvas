@@ -137,47 +137,78 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="absolute right-0 top-0 bottom-0 w-[380px] glass-panel border-l z-40 flex flex-col"
+          initial={{ x: "100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "100%", opacity: 0 }}
+          transition={{ type: "spring", damping: 28, stiffness: 280 }}
+          className="absolute right-3 top-3 bottom-3 w-[360px] z-40 flex flex-col rounded-2xl overflow-hidden"
+          style={{
+            background: "rgba(28, 28, 30, 0.75)",
+            backdropFilter: "blur(40px) saturate(180%)",
+            WebkitBackdropFilter: "blur(40px) saturate(180%)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05) inset",
+          }}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-primary/15 flex items-center justify-center">
-                <Brain className="w-3.5 h-3.5 text-primary" />
+          <div className="p-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: "rgba(99, 179, 237, 0.1)" }}
+              >
+                <Brain className="w-3.5 h-3.5" style={{ color: "rgba(99, 179, 237, 0.8)" }} />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">Intelligence Analyst</h2>
+              <h2 className="text-[13px] font-semibold text-foreground tracking-tight">AI Analyst</h2>
             </div>
-            <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/[0.08] transition-all"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Search */}
-          <div className="p-4 border-b border-border">
+          <div className="p-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
-                placeholder="Search entity, IP, email, handle..."
-                className="w-full pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 font-mono transition-all"
+                placeholder="Email, IP, username, wallet..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-all font-mono"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(99, 179, 237, 0.3)";
+                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 179, 237, 0.08)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.06)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               />
             </div>
             <button
               onClick={handleScan}
               disabled={!query.trim() || scanning}
-              className="mt-3 w-full py-2 bg-primary/15 text-primary border border-primary/30 rounded-lg text-xs font-semibold hover:bg-primary/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-cyan"
+              className="mt-3 w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{
+                background: scanning ? "rgba(99, 179, 237, 0.08)" : "rgba(99, 179, 237, 0.12)",
+                color: "rgba(99, 179, 237, 0.9)",
+                border: "1px solid rgba(99, 179, 237, 0.15)",
+              }}
             >
               {scanning ? (
                 <>
-                  <div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  Scanning with AI...
+                  <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: "rgba(99,179,237,0.2)", borderTopColor: "rgba(99,179,237,0.8)" }} />
+                  Scanning...
                 </>
               ) : (
                 <>
@@ -188,57 +219,71 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
             </button>
           </div>
 
-          {/* Results / Status */}
+          {/* Results */}
           <div className="p-4 space-y-3 flex-1 overflow-y-auto">
             {results.length > 0 ? (
               <>
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">
-                  AI Scan — <span className="text-primary">{scannedQuery}</span>
+                <div className="text-[11px] font-mono" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  Results for <span style={{ color: "rgba(99,179,237,0.8)" }}>{scannedQuery}</span>
                 </div>
+
                 {summary && (
-                  <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 mb-3">
-                    <p className="text-xs font-mono text-foreground">{summary}</p>
+                  <div className="p-3.5 rounded-xl" style={{ background: "rgba(99, 179, 237, 0.06)", border: "1px solid rgba(99,179,237,0.1)" }}>
+                    <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>{summary}</p>
                     {riskLevel && (
-                      <span className={`mt-2 inline-block text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
-                        riskLevel === "critical" ? "bg-destructive/20 text-destructive" :
-                        riskLevel === "high" ? "bg-destructive/15 text-destructive" :
-                        riskLevel === "medium" ? "bg-amber-glow/15 text-amber-glow" :
-                        "bg-accent/15 text-accent"
-                      }`}>
-                        Risk: {riskLevel}
+                      <span
+                        className="mt-2 inline-block text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md"
+                        style={{
+                          background: riskLevel === "critical" || riskLevel === "high" ? "rgba(248,113,113,0.12)" : riskLevel === "medium" ? "rgba(251,191,36,0.12)" : "rgba(52,211,153,0.12)",
+                          color: riskLevel === "critical" || riskLevel === "high" ? "#f87171" : riskLevel === "medium" ? "#fbbf24" : "#34d399",
+                        }}
+                      >
+                        {riskLevel}
                       </span>
                     )}
                   </div>
                 )}
 
-                {/* Drag full scan as IntelNode */}
                 {fullScanData && (
                   <div
                     draggable
                     onDragStart={handleDragFullResult}
-                    className="p-3 rounded-lg border border-primary/30 bg-primary/10 cursor-grab active:cursor-grabbing hover:bg-primary/15 transition-all mb-2 glow-cyan"
+                    className="p-3.5 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200"
+                    style={{
+                      background: "rgba(99, 179, 237, 0.06)",
+                      border: "1px solid rgba(99,179,237,0.12)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(99, 179, 237, 0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(99, 179, 237, 0.06)";
+                    }}
                   >
-                    <div className="flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-primary" />
+                    <div className="flex items-center gap-2.5">
+                      <Brain className="w-4 h-4" style={{ color: "rgba(99, 179, 237, 0.7)" }} />
                       <div className="flex-1">
-                        <div className="text-xs font-semibold text-primary">Drag to create Intelligence Node</div>
-                        <div className="text-[10px] font-mono text-muted-foreground">
-                          Full scan with auto-linking • {results.length} findings
+                        <div className="text-[11px] font-semibold" style={{ color: "rgba(99,179,237,0.9)" }}>
+                          Create Intelligence Node
+                        </div>
+                        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                          Drag to canvas · {results.length} findings · auto-links
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className="text-[10px] font-mono text-muted-foreground mb-2">
-                  ↕ Drag individual results or the full scan onto the canvas
+                <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                  Drag items onto the canvas
                 </div>
+
                 {results.map((result, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
+                    transition={{ delay: i * 0.06 }}
                   >
                     <DraggableResultCard result={result} />
                   </motion.div>
@@ -246,15 +291,15 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
               </>
             ) : (
               <>
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
-                  Canvas Status
+                <div className="text-[11px] font-medium mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  Status
                 </div>
-                <StatusCard icon={<Shield className="w-4 h-4" />} label="OPSEC Status" value="Protected" color="emerald" />
-                <StatusCard icon={<Globe className="w-4 h-4" />} label="Nodes Active" value={`${selectedCount} selected`} color="cyan" />
-                <StatusCard icon={<AlertTriangle className="w-4 h-4" />} label="Threat Level" value="Low" color="amber" />
+                <StatusCard icon={<Shield className="w-4 h-4" />} label="OPSEC" value="Protected" color="emerald" />
+                <StatusCard icon={<Globe className="w-4 h-4" />} label="Selected" value={`${selectedCount} nodes`} color="cyan" />
+                <StatusCard icon={<AlertTriangle className="w-4 h-4" />} label="Threat" value="Low" color="amber" />
 
                 <div className="mt-6">
-                  <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
+                  <div className="text-[11px] font-medium mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>
                     Quick Actions
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -262,7 +307,20 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                       <button
                         key={action}
                         onClick={() => setQuery(action)}
-                        className="px-3 py-2.5 bg-secondary hover:bg-secondary/80 border border-border rounded-lg text-xs font-mono text-secondary-foreground hover:text-foreground transition-all text-left"
+                        className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left"
+                        style={{
+                          background: "rgba(255, 255, 255, 0.04)",
+                          border: "1px solid rgba(255, 255, 255, 0.06)",
+                          color: "rgba(255, 255, 255, 0.6)",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.07)";
+                          e.currentTarget.style.color = "rgba(255, 255, 255, 0.85)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                          e.currentTarget.style.color = "rgba(255, 255, 255, 0.6)";
+                        }}
                       >
                         {action}
                       </button>

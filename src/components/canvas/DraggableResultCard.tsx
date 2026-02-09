@@ -13,10 +13,10 @@ interface DraggableResultCardProps {
   result: ScanResult;
 }
 
-const confColors = {
-  high: "text-accent",
-  medium: "text-primary",
-  low: "text-muted-foreground",
+const confDot: Record<string, string> = {
+  high: "#34d399",
+  medium: "#60a5fa",
+  low: "#6b7280",
 };
 
 export const DraggableResultCard = ({ result }: DraggableResultCardProps) => {
@@ -36,22 +36,30 @@ export const DraggableResultCard = ({ result }: DraggableResultCardProps) => {
     <div
       draggable
       onDragStart={handleDragStart}
-      className="flex items-start gap-3 p-3 rounded-lg border border-border bg-secondary/50 hover:bg-secondary/80 transition-all cursor-grab active:cursor-grabbing group"
+      className="flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing group"
+      style={{
+        background: "rgba(255, 255, 255, 0.03)",
+        border: "1px solid rgba(255, 255, 255, 0.05)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+      }}
     >
-      <div className="mt-0.5 text-primary">{result.icon}</div>
+      <div className="mt-0.5" style={{ color: "rgba(99, 179, 237, 0.6)" }}>{result.icon}</div>
       <div className="flex-1 min-w-0">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        <div className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.35)" }}>
           {result.label}
         </div>
-        <div className="text-xs font-mono text-foreground truncate mt-0.5">
+        <div className="text-[11px] font-mono truncate mt-0.5" style={{ color: "rgba(255,255,255,0.75)" }}>
           {result.value}
         </div>
       </div>
       <div className="flex items-center gap-1.5">
-        <span className={`text-[9px] font-mono uppercase ${confColors[result.confidence]}`}>
-          {result.confidence}
-        </span>
-        <GripVertical className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="w-1.5 h-1.5 rounded-full" style={{ background: confDot[result.confidence] }} />
+        <GripVertical className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "rgba(255,255,255,0.2)" }} />
       </div>
     </div>
   );

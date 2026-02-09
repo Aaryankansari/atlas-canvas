@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Shield, ExternalLink, User, MapPin, Wallet, AtSign, AlertTriangle, Brain } from "lucide-react";
+import { X, Shield, ExternalLink, User, MapPin, Wallet, AtSign, AlertTriangle, Brain, ChevronRight } from "lucide-react";
 import { IntelNodeShape, entityIcons } from "./intel-node/types";
 
 interface DeepDivePanelProps {
@@ -7,11 +7,11 @@ interface DeepDivePanelProps {
   onClose: () => void;
 }
 
-const riskTagColors: Record<string, { bg: string; text: string; border: string }> = {
-  low: { bg: "bg-accent/15", text: "text-accent", border: "border-accent/30" },
-  medium: { bg: "bg-amber-glow/15", text: "text-amber-glow", border: "border-amber-glow/30" },
-  high: { bg: "bg-destructive/15", text: "text-destructive", border: "border-destructive/30" },
-  critical: { bg: "bg-destructive/20", text: "text-destructive", border: "border-destructive/40" },
+const riskColors: Record<string, { dot: string; text: string; bg: string }> = {
+  low: { dot: "#34d399", text: "#34d399", bg: "rgba(52, 211, 153, 0.1)" },
+  medium: { dot: "#fbbf24", text: "#fbbf24", bg: "rgba(251, 191, 36, 0.1)" },
+  high: { dot: "#f87171", text: "#f87171", bg: "rgba(248, 113, 113, 0.1)" },
+  critical: { dot: "#ef4444", text: "#ef4444", bg: "rgba(239, 68, 68, 0.12)" },
 };
 
 const CategorySection = ({
@@ -25,16 +25,23 @@ const CategorySection = ({
 }) => {
   if (!items || items.length === 0) return null;
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        {icon}
-        <span className="text-[10px] font-mono uppercase tracking-wider">{title}</span>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span style={{ color: "rgba(255,255,255,0.35)" }}>{icon}</span>
+        <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+          {title}
+        </span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {items.map((item, i) => (
           <span
             key={i}
-            className="text-[10px] font-mono px-2 py-1 rounded bg-secondary border border-border text-foreground"
+            className="text-[11px] px-2.5 py-1 rounded-lg"
+            style={{
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.06)",
+              color: "rgba(255, 255, 255, 0.75)",
+            }}
           >
             {item}
           </span>
@@ -48,42 +55,61 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
   if (!node) return null;
 
   const { props } = node;
-  const risk = riskTagColors[props.riskLevel] || riskTagColors.low;
+  const risk = riskColors[props.riskLevel] || riskColors.low;
   const icon = entityIcons[props.entityType] || "🔍";
 
   return (
     <AnimatePresence>
       {node && (
         <motion.div
-          initial={{ x: "100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "100%" }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="absolute right-0 top-0 bottom-0 w-[400px] glass-panel border-l z-50 flex flex-col"
+          initial={{ x: "100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "100%", opacity: 0 }}
+          transition={{ type: "spring", damping: 28, stiffness: 280 }}
+          className="absolute right-3 top-3 bottom-3 w-[380px] z-50 flex flex-col rounded-2xl overflow-hidden"
+          style={{
+            background: "rgba(28, 28, 30, 0.75)",
+            backdropFilter: "blur(40px) saturate(180%)",
+            WebkitBackdropFilter: "blur(40px) saturate(180%)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05) inset",
+          }}
         >
           {/* Header */}
-          <div className="p-4 border-b border-border flex items-center justify-between">
+          <div className="p-5 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{icon}</span>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                style={{ background: "rgba(255, 255, 255, 0.06)" }}
+              >
+                {icon}
+              </div>
               <div>
-                <h2 className="text-sm font-semibold text-foreground">{props.label}</h2>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  {props.entityType} • Deep Dive
+                <h2 className="text-[14px] font-semibold text-foreground tracking-tight">{props.label}</h2>
+                <span className="text-[11px] capitalize" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  {props.entityType}
                 </span>
               </div>
             </div>
-            <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/[0.08] transition-all"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="flex-1 overflow-y-auto p-5 space-y-6">
             {/* Risk Level */}
             <div className="flex items-center gap-3">
-              <AlertTriangle className="w-4 h-4 text-muted-foreground" />
-              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Risk Level</span>
+              <div className="w-2 h-2 rounded-full" style={{ background: risk.dot }} />
+              <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                Risk Level
+              </span>
               <span
-                className={`text-[10px] font-mono uppercase font-bold px-2.5 py-1 rounded border ${risk.bg} ${risk.text} ${risk.border}`}
+                className="text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-md ml-auto"
+                style={{ background: risk.bg, color: risk.text }}
               >
                 {props.riskLevel}
               </span>
@@ -91,30 +117,44 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
 
             {/* AI Bio */}
             {props.aiBio && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Brain className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-mono uppercase tracking-wider">Investigator's Brief</span>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-3.5 h-3.5" style={{ color: "rgba(99, 179, 237, 0.7)" }} />
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    Investigator's Brief
+                  </span>
                 </div>
-                <div className="p-3 rounded-lg border border-primary/20 bg-primary/5">
-                  <p className="text-xs leading-relaxed text-foreground">{props.aiBio}</p>
+                <div
+                  className="p-3.5 rounded-xl"
+                  style={{
+                    background: "rgba(99, 179, 237, 0.06)",
+                    border: "1px solid rgba(99, 179, 237, 0.1)",
+                  }}
+                >
+                  <p className="text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>
+                    {props.aiBio}
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Summary */}
             {props.summary && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Shield className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-mono uppercase tracking-wider">Summary</span>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.35)" }} />
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    Summary
+                  </span>
                 </div>
-                <p className="text-xs leading-relaxed text-secondary-foreground">{props.summary}</p>
+                <p className="text-[12px] leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  {props.summary}
+                </p>
               </div>
             )}
 
             {/* Categories */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <CategorySection icon={<User className="w-3.5 h-3.5" />} title="Aliases" items={props.categories?.aliases} />
               <CategorySection icon={<MapPin className="w-3.5 h-3.5" />} title="Locations" items={props.categories?.locations} />
               <CategorySection icon={<Wallet className="w-3.5 h-3.5" />} title="Financials" items={props.categories?.financials} />
@@ -123,18 +163,26 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
 
             {/* Raw Results */}
             {props.rawResults && props.rawResults.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                  All Findings ({props.rawResults.length})
+              <div className="space-y-2.5">
+                <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  All Findings · {props.rawResults.length}
                 </span>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {props.rawResults.map((r: any, i: number) => (
-                    <div key={i} className="flex items-start gap-2 p-2 rounded border border-border bg-secondary/50">
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                      style={{ background: "rgba(255, 255, 255, 0.03)" }}
+                    >
                       <div className="flex-1 min-w-0">
-                        <div className="text-[9px] font-mono uppercase text-muted-foreground">{r.label}</div>
-                        <div className="text-[11px] font-mono text-foreground truncate">{r.value}</div>
+                        <div className="text-[10px] uppercase" style={{ color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em" }}>
+                          {r.label}
+                        </div>
+                        <div className="text-[11px] truncate mt-0.5" style={{ color: "rgba(255,255,255,0.7)" }}>
+                          {r.value}
+                        </div>
                       </div>
-                      <span className="text-[8px] font-mono uppercase text-muted-foreground">{r.confidence}</span>
+                      <ChevronRight className="w-3 h-3 flex-shrink-0" style={{ color: "rgba(255,255,255,0.15)" }} />
                     </div>
                   ))}
                 </div>
@@ -143,8 +191,10 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
 
             {/* Evidence Links */}
             {props.evidenceLinks && props.evidenceLinks.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Evidence Links</span>
+              <div className="space-y-2.5">
+                <span className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  Evidence
+                </span>
                 <div className="space-y-1">
                   {props.evidenceLinks.map((link: string, i: number) => (
                     <a
@@ -152,10 +202,11 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
                       href={link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-xs font-mono text-primary hover:text-primary/80 transition-colors"
+                      className="flex items-center gap-2 text-[11px] px-3 py-2 rounded-xl transition-all hover:bg-white/[0.04]"
+                      style={{ color: "rgba(99, 179, 237, 0.8)" }}
                     >
-                      <ExternalLink className="w-3 h-3" />
-                      {link.length > 50 ? link.slice(0, 47) + "..." : link}
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{link}</span>
                     </a>
                   ))}
                 </div>

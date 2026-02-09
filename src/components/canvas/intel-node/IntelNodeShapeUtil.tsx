@@ -93,8 +93,9 @@ export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
         rx={16}
         ry={16}
         fill="none"
-        stroke="rgba(99, 179, 237, 0.6)"
+        stroke="hsl(215, 90%, 52%)"
         strokeWidth={1.5}
+        strokeOpacity={0.5}
       />
     );
   }

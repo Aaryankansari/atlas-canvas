@@ -146,7 +146,7 @@ const Index = () => {
 
         {/* tldraw canvas */}
         <div className="absolute inset-0 z-0">
-          <Tldraw onMount={handleMount} inferDarkMode shapeUtils={customShapeUtils} components={hiddenComponents} />
+          <Tldraw onMount={handleMount} shapeUtils={customShapeUtils} components={hiddenComponents} />
         </div>
 
         {/* Floating toolbar */}

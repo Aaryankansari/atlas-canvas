@@ -5,17 +5,17 @@ interface IntelNodeComponentProps {
 }
 
 const riskAccent: Record<string, string> = {
-  low: "#34d399",
-  medium: "#fbbf24",
-  high: "#f87171",
-  critical: "#ef4444",
+  low: "#16a34a",
+  medium: "#d97706",
+  high: "#dc2626",
+  critical: "#dc2626",
 };
 
 const riskBadgeStyle: Record<string, { bg: string; color: string }> = {
-  low: { bg: "rgba(52, 211, 153, 0.12)", color: "#34d399" },
-  medium: { bg: "rgba(251, 191, 36, 0.12)", color: "#fbbf24" },
-  high: { bg: "rgba(248, 113, 113, 0.12)", color: "#f87171" },
-  critical: { bg: "rgba(239, 68, 68, 0.15)", color: "#ef4444" },
+  low: { bg: "rgba(22, 163, 74, 0.08)", color: "#16a34a" },
+  medium: { bg: "rgba(217, 119, 6, 0.08)", color: "#d97706" },
+  high: { bg: "rgba(220, 38, 38, 0.08)", color: "#dc2626" },
+  critical: { bg: "rgba(220, 38, 38, 0.1)", color: "#dc2626" },
 };
 
 export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
@@ -37,37 +37,24 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
       style={{
         width: "100%",
         height: "100%",
-        background: "rgba(28, 28, 30, 0.55)",
-        backdropFilter: "blur(40px) saturate(180%)",
-        WebkitBackdropFilter: "blur(40px) saturate(180%)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        background: "rgba(255, 255, 255, 0.85)",
+        backdropFilter: "blur(24px) saturate(180%)",
+        WebkitBackdropFilter: "blur(24px) saturate(180%)",
+        border: "1px solid rgba(0, 0, 0, 0.08)",
         borderRadius: 16,
         padding: 16,
         display: "flex",
         flexDirection: "column",
         gap: 10,
         fontFamily: "-apple-system, 'SF Pro Text', 'Inter', system-ui, sans-serif",
-        color: "rgba(255, 255, 255, 0.92)",
+        color: "#1a1a2e",
         overflow: "hidden",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3), 0 1px 0 rgba(255, 255, 255, 0.05) inset",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
         cursor: "pointer",
         position: "relative",
         transition: "box-shadow 0.3s ease",
       }}
     >
-      {/* Subtle top highlight */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 16,
-          right: 16,
-          height: 1,
-          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
-          borderRadius: 1,
-        }}
-      />
-
       {/* Left accent bar */}
       <div
         style={{
@@ -78,7 +65,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           width: 3,
           borderRadius: "0 2px 2px 0",
           background: accent,
-          opacity: 0.7,
+          opacity: 0.6,
         }}
       />
 
@@ -89,7 +76,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
             width: 32,
             height: 32,
             borderRadius: 8,
-            background: "rgba(255, 255, 255, 0.06)",
+            background: "rgba(0, 0, 0, 0.04)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -109,6 +96,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
               overflow: "hidden",
               textOverflow: "ellipsis",
               lineHeight: 1.2,
+              color: "#1a1a2e",
             }}
           >
             {label}
@@ -116,7 +104,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           <div
             style={{
               fontSize: 10,
-              color: "rgba(255, 255, 255, 0.4)",
+              color: "rgba(0, 0, 0, 0.4)",
               textTransform: "capitalize",
               marginTop: 2,
               letterSpacing: "0.02em",
@@ -149,7 +137,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           style={{
             fontSize: 11,
             lineHeight: 1.5,
-            color: "rgba(255, 255, 255, 0.55)",
+            color: "rgba(0, 0, 0, 0.5)",
             overflow: "hidden",
             textOverflow: "ellipsis",
             display: "-webkit-box",
@@ -178,13 +166,13 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
               width: 5,
               height: 5,
               borderRadius: "50%",
-              background: confidence === "high" ? "#34d399" : confidence === "medium" ? "#60a5fa" : "#6b7280",
+              background: confidence === "high" ? "#16a34a" : confidence === "medium" ? "#3b82f6" : "#9ca3af",
             }}
           />
           <span
             style={{
               fontSize: 9,
-              color: "rgba(255, 255, 255, 0.35)",
+              color: "rgba(0, 0, 0, 0.35)",
               textTransform: "uppercase",
               letterSpacing: "0.04em",
               fontWeight: 500,
@@ -198,7 +186,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           <span
             style={{
               fontSize: 9,
-              color: "rgba(255, 255, 255, 0.3)",
+              color: "rgba(0, 0, 0, 0.3)",
               fontWeight: 500,
             }}
           >

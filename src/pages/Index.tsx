@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { Tldraw, Editor, createShapeId, TLComponents } from "tldraw";
 import "tldraw/tldraw.css";
 import { FloatingToolbar } from "@/components/canvas/FloatingToolbar";
@@ -32,6 +32,7 @@ const Index = () => {
   const [analystOpen, setAnalystOpen] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [deepDiveNode, setDeepDiveNode] = useState<IntelNodeShape | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Auto-link intel nodes sharing indicators
@@ -54,10 +55,13 @@ const Index = () => {
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(false);
+
       const raw = e.dataTransfer.getData("application/icarus-node");
       if (!raw || !editor) return;
 
-      e.preventDefault();
       try {
         const data = JSON.parse(raw);
         const rect = canvasRef.current?.getBoundingClientRect();
@@ -70,7 +74,6 @@ const Index = () => {
 
         const id = createShapeId();
 
-        // If it's an intel-node drop (from scan results with full data)
         if (data.isIntelNode) {
           editor.createShape({
             id,
@@ -93,7 +96,6 @@ const Index = () => {
             } satisfies IntelNodeProps,
           });
         } else {
-          // Legacy: single result card drop as a note
           editor.createShape({
             id,
             type: INTEL_NODE_TYPE,
@@ -127,7 +129,26 @@ const Index = () => {
   const handleDragOver = useCallback((e: React.DragEvent) => {
     if (e.dataTransfer.types.includes("application/icarus-node")) {
       e.preventDefault();
+      e.stopPropagation();
       e.dataTransfer.dropEffect = "copy";
+    }
+  }, []);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("application/icarus-node")) {
+      e.preventDefault();
+      setIsDraggingOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only hide if leaving the container entirely
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      const { clientX, clientY } = e;
+      if (clientX <= rect.left || clientX >= rect.right || clientY <= rect.top || clientY >= rect.bottom) {
+        setIsDraggingOver(false);
+      }
     }
   }, []);
 
@@ -138,8 +159,8 @@ const Index = () => {
       <div
         ref={canvasRef}
         className="flex-1 relative"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
       >
         {/* Grid overlay */}
         <div className="absolute inset-0 grid-bg pointer-events-none z-[1] opacity-40" />
@@ -148,6 +169,16 @@ const Index = () => {
         <div className="absolute inset-0 z-0">
           <Tldraw onMount={handleMount} shapeUtils={customShapeUtils} components={hiddenComponents} />
         </div>
+
+        {/* Transparent drop target overlay — sits above tldraw to intercept drops */}
+        {isDraggingOver && (
+          <div
+            className="absolute inset-0 z-[25]"
+            style={{ background: "rgba(0,0,0,0.02)" }}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          />
+        )}
 
         {/* Floating toolbar */}
         <FloatingToolbar editor={editor} />

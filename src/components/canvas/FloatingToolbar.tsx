@@ -28,7 +28,7 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
       transition={{ delay: 0.3, type: "spring", damping: 24, stiffness: 260 }}
       className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30"
     >
-      <div className="flex items-center gap-1 px-2 py-1.5 rounded-2xl bg-card/80 backdrop-blur-xl border border-border shadow-lg">
+      <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-full bg-card border border-border shadow-lg">
         {tools.map((tool) => {
           const Icon = tool.icon;
           return (
@@ -36,28 +36,28 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
               key={tool.id}
               onClick={() => handleTool(tool.id)}
               title={tool.label}
-              className="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-secondary active:scale-95"
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95"
             >
-              <Icon className="w-[18px] h-[18px]" strokeWidth={1.5} />
+              <Icon className="w-[17px] h-[17px]" strokeWidth={1.5} />
             </button>
           );
         })}
 
-        <div className="w-px h-6 mx-0.5 bg-border" />
+        <div className="w-px h-5 mx-1 bg-border" />
 
         <button
           onClick={() => handleTool("select")}
           title="Search Entity"
-          className="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 text-primary/70 hover:text-primary hover:bg-primary/5 active:scale-95"
+          className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 text-primary/60 hover:text-primary hover:bg-primary/5 active:scale-95"
         >
-          <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
+          <Search className="w-[17px] h-[17px]" strokeWidth={1.5} />
         </button>
         <button
           onClick={() => handleTool("select")}
           title="Link Nodes"
-          className="w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 text-primary/70 hover:text-primary hover:bg-primary/5 active:scale-95"
+          className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 text-primary/60 hover:text-primary hover:bg-primary/5 active:scale-95"
         >
-          <Network className="w-[18px] h-[18px]" strokeWidth={1.5} />
+          <Network className="w-[17px] h-[17px]" strokeWidth={1.5} />
         </button>
       </div>
     </motion.div>

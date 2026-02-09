@@ -16,7 +16,7 @@ interface DraggableResultCardProps {
 const confDot: Record<string, string> = {
   high: "#16a34a",
   medium: "#3b82f6",
-  low: "#9ca3af",
+  low: "#d1d5db",
 };
 
 export const DraggableResultCard = ({ result }: DraggableResultCardProps) => {
@@ -36,9 +36,9 @@ export const DraggableResultCard = ({ result }: DraggableResultCardProps) => {
     <div
       draggable
       onDragStart={handleDragStart}
-      className="flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing group bg-secondary/50 border border-border hover:bg-secondary"
+      className="flex items-start gap-3 p-3 rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing group bg-muted/50 border border-border hover:bg-muted"
     >
-      <div className="mt-0.5 text-primary/60">{result.icon}</div>
+      <div className="mt-0.5 text-primary/50">{result.icon}</div>
       <div className="flex-1 min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{result.label}</div>
         <div className="text-[11px] font-mono truncate mt-0.5 text-foreground/75">{result.value}</div>

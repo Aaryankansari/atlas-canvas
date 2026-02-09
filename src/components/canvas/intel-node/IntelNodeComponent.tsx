@@ -37,50 +37,34 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
       style={{
         width: "100%",
         height: "100%",
-        background: "rgba(255, 255, 255, 0.85)",
-        backdropFilter: "blur(24px) saturate(180%)",
-        WebkitBackdropFilter: "blur(24px) saturate(180%)",
-        border: "1px solid rgba(0, 0, 0, 0.08)",
-        borderRadius: 16,
-        padding: 16,
+        background: "#ffffff",
+        border: "1px solid #e0e0e0",
+        borderRadius: 20,
+        padding: 18,
         display: "flex",
         flexDirection: "column",
         gap: 10,
-        fontFamily: "-apple-system, 'SF Pro Text', 'Inter', system-ui, sans-serif",
-        color: "#1a1a2e",
+        fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
+        color: "#262626",
         overflow: "hidden",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02)",
         cursor: "pointer",
         position: "relative",
-        transition: "box-shadow 0.3s ease",
+        transition: "box-shadow 0.25s ease, transform 0.2s ease",
       }}
     >
-      {/* Left accent bar */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 12,
-          bottom: 12,
-          width: 3,
-          borderRadius: "0 2px 2px 0",
-          background: accent,
-          opacity: 0.6,
-        }}
-      />
-
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: "rgba(0, 0, 0, 0.04)",
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            background: "#f5f5f5",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 16,
+            fontSize: 18,
             flexShrink: 0,
           }}
         >
@@ -89,25 +73,25 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 600,
               letterSpacing: "-0.01em",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
               lineHeight: 1.2,
-              color: "#1a1a2e",
+              color: "#262626",
             }}
           >
             {label}
           </div>
           <div
             style={{
-              fontSize: 10,
-              color: "rgba(0, 0, 0, 0.4)",
+              fontSize: 11,
+              color: "#999",
               textTransform: "capitalize",
               marginTop: 2,
-              letterSpacing: "0.02em",
+              letterSpacing: "0.01em",
             }}
           >
             {entityType}
@@ -121,7 +105,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
             textTransform: "uppercase",
             letterSpacing: "0.06em",
             padding: "3px 8px",
-            borderRadius: 6,
+            borderRadius: 8,
             background: badge.bg,
             color: badge.color,
             flexShrink: 0,
@@ -135,15 +119,14 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
       {(aiBio || summary) && (
         <div
           style={{
-            fontSize: 11,
-            lineHeight: 1.5,
-            color: "rgba(0, 0, 0, 0.5)",
+            fontSize: 12,
+            lineHeight: 1.55,
+            color: "#777",
             overflow: "hidden",
             textOverflow: "ellipsis",
             display: "-webkit-box",
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical" as const,
-            paddingLeft: 4,
           }}
         >
           {aiBio || summary}
@@ -157,24 +140,23 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingLeft: 4,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div
             style={{
-              width: 5,
-              height: 5,
+              width: 6,
+              height: 6,
               borderRadius: "50%",
-              background: confidence === "high" ? "#16a34a" : confidence === "medium" ? "#3b82f6" : "#9ca3af",
+              background: confidence === "high" ? "#16a34a" : confidence === "medium" ? "#3b82f6" : "#d1d5db",
             }}
           />
           <span
             style={{
-              fontSize: 9,
-              color: "rgba(0, 0, 0, 0.35)",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
+              fontSize: 10,
+              color: "#aaa",
+              textTransform: "capitalize",
+              letterSpacing: "0.02em",
               fontWeight: 500,
             }}
           >
@@ -185,8 +167,8 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
         {indicatorCount > 0 && (
           <span
             style={{
-              fontSize: 9,
-              color: "rgba(0, 0, 0, 0.3)",
+              fontSize: 10,
+              color: "#bbb",
               fontWeight: 500,
             }}
           >

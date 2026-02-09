@@ -252,6 +252,32 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (entityType === "general") {
+      // For general queries (e.g. names), also try username-style lookups
+      const sanitized = query.trim().replace(/\s+/g, "").toLowerCase();
+      if (sanitized.length >= 3) {
+        const usernameData = await gatherUsernameIntel(sanitized);
+        const found = usernameData.filter(p => p.found);
+        if (found.length > 0) {
+          realIntel.platformChecks = usernameData;
+          realIntel.sourcesQueried.push("github.com");
+        }
+      }
+      // Also try email extraction
+      const emailMatch = query.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
+      if (emailMatch) {
+        const emailData = await gatherEmailIntel(emailMatch[0]);
+        if (emailData.disify) { realIntel.emailValidation = emailData.disify; realIntel.sourcesQueried.push("disify.com"); }
+        if (emailData.mailcheck) { realIntel.emailDeliverability = emailData.mailcheck; realIntel.sourcesQueried.push("eva.pingutil.com"); }
+      }
+      // Also try IP extraction
+      const ipMatch = query.match(/\b(\d{1,3}\.){3}\d{1,3}\b/);
+      if (ipMatch) {
+        const ipData = await gatherIPIntel(ipMatch[0]);
+        if (ipData) { realIntel.ipGeolocation = ipData; realIntel.sourcesQueried.push("ip-api.com"); }
+      }
+    }
+
     if (entityType === "username") {
       const usernameData = await gatherUsernameIntel(query);
       realIntel.platformChecks = usernameData;

@@ -419,7 +419,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
 
               {/* Results */}
               <div className="p-4 space-y-3 flex-1 overflow-y-auto">
-                {results.length > 0 ? (
+                {(results.length > 0 || fullScanData) ? (
                   <>
                     <div className="flex items-center justify-between">
                       <div className="text-[11px] font-mono text-muted-foreground">

@@ -43,6 +43,17 @@ const iconMap: Record<string, React.ReactNode> = {
   risk: <Activity className="w-3.5 h-3.5" />,
 };
 
+interface FullScanData {
+  summary: string;
+  aiBio: string;
+  riskLevel: string;
+  categories: { aliases: string[]; locations: string[]; financials: string[]; socials: string[] };
+  metadata: { emails: string[]; ips: string[]; btcWallets: string[]; usernames: string[]; domains: string[] };
+  evidenceLinks: string[];
+  results: any[];
+  entityType: string;
+}
+
 export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: AnalystPanelProps) => {
   const [query, setQuery] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -50,6 +61,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
   const [scannedQuery, setScannedQuery] = useState("");
   const [summary, setSummary] = useState("");
   const [riskLevel, setRiskLevel] = useState("");
+  const [fullScanData, setFullScanData] = useState<FullScanData | null>(null);
 
   const handleScan = async () => {
     if (!query.trim() || scanning) return;
@@ -57,6 +69,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     setResults([]);
     setSummary("");
     setRiskLevel("");
+    setFullScanData(null);
 
     const entityType = detectEntityType(query);
 
@@ -78,6 +91,16 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
         setResults(mapped);
         setSummary(data.summary || "");
         setRiskLevel(data.riskLevel || "low");
+        setFullScanData({
+          summary: data.summary || "",
+          aiBio: data.aiBio || "",
+          riskLevel: data.riskLevel || "low",
+          categories: data.categories || { aliases: [], locations: [], financials: [], socials: [] },
+          metadata: data.metadata || { emails: [], ips: [], btcWallets: [], usernames: [], domains: [] },
+          evidenceLinks: data.evidenceLinks || [],
+          results: data.results || [],
+          entityType: data.entityType || entityType,
+        });
       } else if (data?.error) {
         toast.error(data.error);
       }
@@ -89,6 +112,25 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     } finally {
       setScanning(false);
     }
+  };
+
+  const handleDragFullResult = (e: React.DragEvent) => {
+    if (!fullScanData) return;
+    const data = {
+      isIntelNode: true,
+      label: scannedQuery,
+      entityType: fullScanData.entityType,
+      riskLevel: fullScanData.riskLevel,
+      summary: fullScanData.summary,
+      aiBio: fullScanData.aiBio,
+      confidence: "high",
+      metadata: fullScanData.metadata,
+      categories: fullScanData.categories,
+      evidenceLinks: fullScanData.evidenceLinks,
+      rawResults: fullScanData.results,
+    };
+    e.dataTransfer.setData("application/icarus-node", JSON.stringify(data));
+    e.dataTransfer.effectAllowed = "copy";
   };
 
   return (
@@ -168,8 +210,28 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                     )}
                   </div>
                 )}
+
+                {/* Drag full scan as IntelNode */}
+                {fullScanData && (
+                  <div
+                    draggable
+                    onDragStart={handleDragFullResult}
+                    className="p-3 rounded-lg border border-primary/30 bg-primary/10 cursor-grab active:cursor-grabbing hover:bg-primary/15 transition-all mb-2 glow-cyan"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-primary" />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold text-primary">Drag to create Intelligence Node</div>
+                        <div className="text-[10px] font-mono text-muted-foreground">
+                          Full scan with auto-linking • {results.length} findings
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="text-[10px] font-mono text-muted-foreground mb-2">
-                  ↕ Drag results onto the canvas to create intelligence nodes
+                  ↕ Drag individual results or the full scan onto the canvas
                 </div>
                 {results.map((result, i) => (
                   <motion.div
@@ -199,9 +261,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                     {["Trace IP", "Find Emails", "WHOIS Lookup", "Social Scan"].map((action) => (
                       <button
                         key={action}
-                        onClick={() => {
-                          setQuery(action);
-                        }}
+                        onClick={() => setQuery(action)}
                         className="px-3 py-2.5 bg-secondary hover:bg-secondary/80 border border-border rounded-lg text-xs font-mono text-secondary-foreground hover:text-foreground transition-all text-left"
                       >
                         {action}

@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      investigations: {
+        Row: {
+          ai_bio: string | null
+          categories: Json | null
+          classification: string | null
+          created_at: string
+          entity_type: string
+          evidence_links: string[] | null
+          id: string
+          metadata: Json | null
+          network_map: Json | null
+          pivot_suggestions: Json | null
+          query: string
+          raw_intel: Json | null
+          recommendations: Json | null
+          results: Json | null
+          risk_level: string | null
+          scan_mode: string
+          summary: string | null
+          threat_profile: Json | null
+        }
+        Insert: {
+          ai_bio?: string | null
+          categories?: Json | null
+          classification?: string | null
+          created_at?: string
+          entity_type: string
+          evidence_links?: string[] | null
+          id?: string
+          metadata?: Json | null
+          network_map?: Json | null
+          pivot_suggestions?: Json | null
+          query: string
+          raw_intel?: Json | null
+          recommendations?: Json | null
+          results?: Json | null
+          risk_level?: string | null
+          scan_mode?: string
+          summary?: string | null
+          threat_profile?: Json | null
+        }
+        Update: {
+          ai_bio?: string | null
+          categories?: Json | null
+          classification?: string | null
+          created_at?: string
+          entity_type?: string
+          evidence_links?: string[] | null
+          id?: string
+          metadata?: Json | null
+          network_map?: Json | null
+          pivot_suggestions?: Json | null
+          query?: string
+          raw_intel?: Json | null
+          recommendations?: Json | null
+          results?: Json | null
+          risk_level?: string | null
+          scan_mode?: string
+          summary?: string | null
+          threat_profile?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

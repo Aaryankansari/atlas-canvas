@@ -46,6 +46,7 @@ Return a JSON object with this exact structure:
 {
   "entityType": "email|ip|username|btc|general",
   "summary": "One-line intelligence summary",
+  "aiBio": "A 2-sentence investigator's brief summarizing who/what this entity is and why it matters.",
   "results": [
     {
       "type": "category_name",
@@ -55,7 +56,21 @@ Return a JSON object with this exact structure:
     }
   ],
   "riskLevel": "low|medium|high|critical",
-  "recommendations": ["actionable step 1", "actionable step 2"]
+  "recommendations": ["actionable step 1", "actionable step 2"],
+  "categories": {
+    "aliases": ["known aliases or alternate names"],
+    "locations": ["associated geographic locations"],
+    "financials": ["financial indicators, wallets, transactions"],
+    "socials": ["social media profiles, handles, platforms"]
+  },
+  "metadata": {
+    "emails": ["any email addresses found"],
+    "ips": ["any IP addresses found"],
+    "btcWallets": ["any BTC wallet addresses found"],
+    "usernames": ["any usernames/handles found"],
+    "domains": ["any domains found"]
+  },
+  "evidenceLinks": ["https://example.com/source1"]
 }`;
 
     const response = await fetch(
@@ -103,10 +118,8 @@ Return a JSON object with this exact structure:
     const aiData = await response.json();
     const content = aiData.choices?.[0]?.message?.content || "";
 
-    // Parse the AI response as JSON
     let parsed;
     try {
-      // Strip markdown code fences if present
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
@@ -114,13 +127,23 @@ Return a JSON object with this exact structure:
       parsed = {
         entityType,
         summary: "Analysis complete",
+        aiBio: "",
         results: [
           { type: "raw", label: "AI Analysis", value: content.slice(0, 500), confidence: "medium" },
         ],
         riskLevel: "low",
         recommendations: [],
+        categories: { aliases: [], locations: [], financials: [], socials: [] },
+        metadata: { emails: [], ips: [], btcWallets: [], usernames: [], domains: [] },
+        evidenceLinks: [],
       };
     }
+
+    // Ensure all fields exist
+    parsed.aiBio = parsed.aiBio || "";
+    parsed.categories = parsed.categories || { aliases: [], locations: [], financials: [], socials: [] };
+    parsed.metadata = parsed.metadata || { emails: [], ips: [], btcWallets: [], usernames: [], domains: [] };
+    parsed.evidenceLinks = parsed.evidenceLinks || [];
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

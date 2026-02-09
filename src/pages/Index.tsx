@@ -6,6 +6,7 @@ import { AnalystPanel } from "@/components/canvas/AnalystPanel";
 import { CanvasHeader } from "@/components/canvas/CanvasHeader";
 import { StatusBar } from "@/components/canvas/StatusBar";
 import { DeepDivePanel } from "@/components/canvas/DeepDivePanel";
+import { SelectionToolbar } from "@/components/canvas/SelectionToolbar";
 import { IntelNodeShapeUtil } from "@/components/canvas/intel-node/IntelNodeShapeUtil";
 import { useAutoLinker } from "@/components/canvas/intel-node/useAutoLinker";
 import { IntelNodeShape, INTEL_NODE_TYPE, IntelNodeProps } from "@/components/canvas/intel-node/types";
@@ -181,7 +182,10 @@ const Index = () => {
         )}
 
         {/* Floating toolbar */}
-        <FloatingToolbar editor={editor} />
+        <FloatingToolbar editor={editor} selectedCount={selectedCount} />
+
+        {/* Selection connector toolbar */}
+        <SelectionToolbar editor={editor} selectedCount={selectedCount} />
 
         {/* Analyst Panel */}
         <AnalystPanel

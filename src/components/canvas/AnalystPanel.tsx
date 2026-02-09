@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Brain, Search, Shield, Globe, AlertTriangle, Sparkles, Mail, User, Hash, AtSign, ExternalLink, Activity } from "lucide-react";
+import { X, Brain, Search, Shield, Globe, AlertTriangle, Sparkles, Mail, User, Hash, AtSign, ExternalLink, Activity, Crosshair, Network, Zap } from "lucide-react";
 import { Editor } from "tldraw";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,15 +15,11 @@ interface AnalystPanelProps {
 }
 
 function detectEntityType(query: string): string {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
-  const btcRegex = /^(1|3|bc1)[a-zA-Z0-9]{25,42}$/;
-  const usernameRegex = /^@?[a-zA-Z0-9_]{3,30}$/;
-
-  if (emailRegex.test(query.trim())) return "email";
-  if (ipRegex.test(query.trim())) return "ip";
-  if (btcRegex.test(query.trim())) return "btc";
-  if (usernameRegex.test(query.trim())) return "username";
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query.trim())) return "email";
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(query.trim())) return "ip";
+  if (/^(1|3|bc1)[a-zA-Z0-9]{25,42}$/.test(query.trim())) return "btc";
+  if (/^@?[a-zA-Z0-9_]{3,30}$/.test(query.trim())) return "username";
+  if (/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(query.trim())) return "domain";
   return "general";
 }
 
@@ -41,18 +37,29 @@ const iconMap: Record<string, React.ReactNode> = {
   entities: <User className="w-3.5 h-3.5" />,
   raw: <Brain className="w-3.5 h-3.5" />,
   risk: <Activity className="w-3.5 h-3.5" />,
+  infrastructure: <Network className="w-3.5 h-3.5" />,
+  threat: <Crosshair className="w-3.5 h-3.5" />,
 };
 
 interface FullScanData {
   summary: string;
   aiBio: string;
   riskLevel: string;
-  categories: { aliases: string[]; locations: string[]; financials: string[]; socials: string[] };
+  categories: { aliases: string[]; locations: string[]; financials: string[]; socials: string[]; infrastructure?: string[]; associates?: string[] };
   metadata: { emails: string[]; ips: string[]; btcWallets: string[]; usernames: string[]; domains: string[] };
   evidenceLinks: string[];
   results: any[];
   entityType: string;
+  classification?: string;
+  threatProfile?: any;
+  networkMap?: any;
+  timeline?: any[];
+  recommendations?: any[];
+  pivotSuggestions?: any[];
+  rawIntel?: any;
 }
+
+type ScanMode = "quick" | "deep";
 
 export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: AnalystPanelProps) => {
   const [query, setQuery] = useState("");
@@ -62,6 +69,8 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
   const [summary, setSummary] = useState("");
   const [riskLevel, setRiskLevel] = useState("");
   const [fullScanData, setFullScanData] = useState<FullScanData | null>(null);
+  const [scanMode, setScanMode] = useState<ScanMode>("quick");
+  const [sourcesQueried, setSourcesQueried] = useState<string[]>([]);
 
   const handleScan = async () => {
     if (!query.trim() || scanning) return;
@@ -70,11 +79,13 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     setSummary("");
     setRiskLevel("");
     setFullScanData(null);
+    setSourcesQueried([]);
 
     const entityType = detectEntityType(query);
+    const endpoint = scanMode === "deep" ? "deep-search" : "osint-scan";
 
     try {
-      const { data, error } = await supabase.functions.invoke("osint-scan", {
+      const { data, error } = await supabase.functions.invoke(endpoint, {
         body: { query: query.trim(), entityType },
       });
 
@@ -91,6 +102,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
         setResults(mapped);
         setSummary(data.summary || "");
         setRiskLevel(data.riskLevel || "low");
+        setSourcesQueried(data.rawIntel?.sources || data.rawIntel?.sourcesQueried || []);
         setFullScanData({
           summary: data.summary || "",
           aiBio: data.aiBio || "",
@@ -100,6 +112,13 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
           evidenceLinks: data.evidenceLinks || [],
           results: data.results || [],
           entityType: data.entityType || entityType,
+          classification: data.classification,
+          threatProfile: data.threatProfile,
+          networkMap: data.networkMap,
+          timeline: data.timeline,
+          recommendations: data.recommendations,
+          pivotSuggestions: data.pivotSuggestions,
+          rawIntel: data.rawIntel,
         });
       } else if (data?.error) {
         toast.error(data.error);
@@ -133,6 +152,10 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     e.dataTransfer.effectAllowed = "copy";
   };
 
+  const handlePivot = (entity: string) => {
+    setQuery(entity);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -141,19 +164,46 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 20, opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 280 }}
-          className="absolute right-3 top-3 bottom-3 w-[360px] z-40 flex flex-col rounded-2xl overflow-hidden bg-card border border-border shadow-xl"
+          className="absolute right-3 top-3 bottom-3 w-[380px] z-40 flex flex-col rounded-2xl overflow-hidden bg-card/95 backdrop-blur-xl border border-border shadow-xl"
         >
           {/* Header */}
           <div className="p-4 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center bg-primary/10">
+              <motion.div
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-primary/10"
+                animate={scanning ? { rotate: 360 } : {}}
+                transition={scanning ? { duration: 2, repeat: Infinity, ease: "linear" } : {}}
+              >
                 <Brain className="w-3.5 h-3.5 text-primary" />
-              </div>
+              </motion.div>
               <h2 className="text-[13px] font-semibold text-foreground tracking-tight">AI Analyst</h2>
             </div>
             <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
               <X className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Mode Toggle */}
+          <div className="px-4 pt-3 pb-1">
+            <div className="flex gap-1 p-0.5 rounded-xl bg-muted/50 border border-border">
+              {(["quick", "deep"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setScanMode(mode)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+                    scanMode === mode
+                      ? "bg-card text-foreground shadow-sm border border-border"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {mode === "quick" ? (
+                    <><Zap className="w-3 h-3" /> Quick Scan</>
+                  ) : (
+                    <><Crosshair className="w-3 h-3" /> Deep Search</>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Search */}
@@ -165,24 +215,32 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
-                placeholder="Email, IP, username, wallet..."
+                placeholder="Email, IP, username, domain, wallet..."
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all font-mono"
               />
             </div>
             <button
               onClick={handleScan}
               disabled={!query.trim() || scanning}
-              className="mt-3 w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:opacity-90"
+              className={`mt-3 w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                scanMode === "deep"
+                  ? "bg-gradient-to-r from-primary to-emerald-glow text-primary-foreground hover:opacity-90"
+                  : "bg-primary text-primary-foreground hover:opacity-90"
+              }`}
             >
               {scanning ? (
                 <>
-                  <div className="w-3 h-3 border-2 rounded-full animate-spin border-primary-foreground/20 border-t-primary-foreground" />
-                  Scanning...
+                  <motion.div
+                    className="w-3 h-3 border-2 rounded-full border-primary-foreground/20 border-t-primary-foreground"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                  />
+                  {scanMode === "deep" ? "Deep scanning..." : "Scanning..."}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  Scan with AI
+                  {scanMode === "deep" ? "Deep Search with AI" : "Scan with AI"}
                 </>
               )}
             </button>
@@ -192,9 +250,37 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
           <div className="p-4 space-y-3 flex-1 overflow-y-auto">
             {results.length > 0 ? (
               <>
-                <div className="text-[11px] font-mono text-muted-foreground">
-                  Results for <span className="text-primary font-semibold">{scannedQuery}</span>
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-mono text-muted-foreground">
+                    Results for <span className="text-primary font-semibold">{scannedQuery}</span>
+                  </div>
+                  {sourcesQueried.length > 0 && (
+                    <span className="text-[9px] text-muted-foreground/60 font-mono">
+                      {sourcesQueried.length} sources
+                    </span>
+                  )}
                 </div>
+
+                {/* Classification badge for deep search */}
+                {fullScanData?.classification && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-muted/30"
+                  >
+                    <Crosshair className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[10px] font-medium text-muted-foreground">Classification:</span>
+                    <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md ${
+                      fullScanData.classification === "malicious"
+                        ? "bg-destructive/10 text-destructive"
+                        : fullScanData.classification === "suspicious"
+                          ? "bg-amber-glow/10 text-amber-600"
+                          : "bg-primary/10 text-primary"
+                    }`}>
+                      {fullScanData.classification}
+                    </span>
+                  </motion.div>
+                )}
 
                 {summary && (
                   <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/10">
@@ -213,6 +299,39 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                   </div>
                 )}
 
+                {/* Sources queried */}
+                {sourcesQueried.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {sourcesQueried.map((src, i) => (
+                      <span key={i} className="text-[9px] px-2 py-0.5 rounded-md bg-muted border border-border text-muted-foreground font-mono">
+                        {src}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pivot Suggestions */}
+                {fullScanData?.pivotSuggestions && fullScanData.pivotSuggestions.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Network className="w-3 h-3" /> Investigate Next
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {fullScanData.pivotSuggestions.slice(0, 5).map((p: any, i: number) => (
+                        <button
+                          key={i}
+                          onClick={() => handlePivot(p.entity)}
+                          className="text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-all font-mono"
+                          title={p.rationale}
+                        >
+                          {p.entity}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Drag to canvas */}
                 {fullScanData && (
                   <div
                     draggable
@@ -232,10 +351,29 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                 <div className="text-[10px] text-muted-foreground/60">Drag items onto the canvas</div>
 
                 {results.map((result, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                     <DraggableResultCard result={result} />
                   </motion.div>
                 ))}
+
+                {/* Recommendations */}
+                {fullScanData?.recommendations && fullScanData.recommendations.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-border">
+                    <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Shield className="w-3 h-3" /> Recommendations
+                    </span>
+                    {fullScanData.recommendations.slice(0, 4).map((rec: any, i: number) => (
+                      <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl bg-muted/30 border border-border">
+                        <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                          (rec.priority || "medium") === "high" ? "bg-destructive" : (rec.priority || "medium") === "medium" ? "bg-amber-500" : "bg-primary"
+                        }`} />
+                        <span className="text-[11px] text-foreground/70 leading-relaxed">
+                          {typeof rec === "string" ? rec : rec.action}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -247,13 +385,20 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                 <div className="mt-6">
                   <div className="text-[11px] font-medium mb-3 text-muted-foreground">Quick Actions</div>
                   <div className="grid grid-cols-2 gap-2">
-                    {["Trace IP", "Find Emails", "WHOIS Lookup", "Social Scan"].map((action) => (
+                    {[
+                      { label: "Trace IP", hint: "192.168.1.1" },
+                      { label: "Find Emails", hint: "user@example.com" },
+                      { label: "WHOIS Lookup", hint: "example.com" },
+                      { label: "Social Scan", hint: "@username" },
+                      { label: "Breach Check", hint: "user@email.com" },
+                      { label: "Wallet Trace", hint: "1A1zP1..." },
+                    ].map((action) => (
                       <button
-                        key={action}
-                        onClick={() => setQuery(action)}
-                        className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left bg-muted border border-border text-foreground/60 hover:bg-muted/80 hover:text-foreground"
+                        key={action.label}
+                        onClick={() => { setQuery(action.hint); setScanMode("deep"); }}
+                        className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left bg-muted border border-border text-foreground/60 hover:bg-muted/80 hover:text-foreground hover:border-primary/10"
                       >
-                        {action}
+                        {action.label}
                       </button>
                     ))}
                   </div>

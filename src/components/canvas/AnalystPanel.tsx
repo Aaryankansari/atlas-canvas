@@ -141,73 +141,42 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 280 }}
-          className="absolute right-3 top-3 bottom-3 w-[360px] z-40 flex flex-col rounded-2xl overflow-hidden"
-          style={{
-            background: "rgba(28, 28, 30, 0.75)",
-            backdropFilter: "blur(40px) saturate(180%)",
-            WebkitBackdropFilter: "blur(40px) saturate(180%)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            boxShadow: "0 24px 64px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05) inset",
-          }}
+          className="absolute right-3 top-3 bottom-3 w-[360px] z-40 flex flex-col rounded-2xl overflow-hidden bg-card/90 backdrop-blur-xl border border-border shadow-xl"
         >
           {/* Header */}
-          <div className="p-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="p-4 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-2.5">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: "rgba(99, 179, 237, 0.1)" }}
-              >
-                <Brain className="w-3.5 h-3.5" style={{ color: "rgba(99, 179, 237, 0.8)" }} />
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary/10">
+                <Brain className="w-3.5 h-3.5 text-primary" />
               </div>
               <h2 className="text-[13px] font-semibold text-foreground tracking-tight">AI Analyst</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/[0.08] transition-all"
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
+            <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Search */}
-          <div className="p-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <div className="p-4 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
                 placeholder="Email, IP, username, wallet..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none transition-all font-mono"
-                style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.06)",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(99, 179, 237, 0.3)";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 179, 237, 0.08)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.06)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground bg-secondary border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all font-mono"
               />
             </div>
             <button
               onClick={handleScan}
               disabled={!query.trim() || scanning}
-              className="mt-3 w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{
-                background: scanning ? "rgba(99, 179, 237, 0.08)" : "rgba(99, 179, 237, 0.12)",
-                color: "rgba(99, 179, 237, 0.9)",
-                border: "1px solid rgba(99, 179, 237, 0.15)",
-              }}
+              className="mt-3 w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {scanning ? (
                 <>
-                  <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: "rgba(99,179,237,0.2)", borderTopColor: "rgba(99,179,237,0.8)" }} />
+                  <div className="w-3 h-3 border-2 rounded-full animate-spin border-primary-foreground/20 border-t-primary-foreground" />
                   Scanning...
                 </>
               ) : (
@@ -223,19 +192,19 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
           <div className="p-4 space-y-3 flex-1 overflow-y-auto">
             {results.length > 0 ? (
               <>
-                <div className="text-[11px] font-mono" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  Results for <span style={{ color: "rgba(99,179,237,0.8)" }}>{scannedQuery}</span>
+                <div className="text-[11px] font-mono text-muted-foreground">
+                  Results for <span className="text-primary">{scannedQuery}</span>
                 </div>
 
                 {summary && (
-                  <div className="p-3.5 rounded-xl" style={{ background: "rgba(99, 179, 237, 0.06)", border: "1px solid rgba(99,179,237,0.1)" }}>
-                    <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>{summary}</p>
+                  <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-[11px] leading-relaxed text-foreground/70">{summary}</p>
                     {riskLevel && (
                       <span
                         className="mt-2 inline-block text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md"
                         style={{
-                          background: riskLevel === "critical" || riskLevel === "high" ? "rgba(248,113,113,0.12)" : riskLevel === "medium" ? "rgba(251,191,36,0.12)" : "rgba(52,211,153,0.12)",
-                          color: riskLevel === "critical" || riskLevel === "high" ? "#f87171" : riskLevel === "medium" ? "#fbbf24" : "#34d399",
+                          background: riskLevel === "critical" || riskLevel === "high" ? "rgba(220,38,38,0.08)" : riskLevel === "medium" ? "rgba(217,119,6,0.08)" : "rgba(22,163,74,0.08)",
+                          color: riskLevel === "critical" || riskLevel === "high" ? "#dc2626" : riskLevel === "medium" ? "#d97706" : "#16a34a",
                         }}
                       >
                         {riskLevel}
@@ -248,79 +217,41 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                   <div
                     draggable
                     onDragStart={handleDragFullResult}
-                    className="p-3.5 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200"
-                    style={{
-                      background: "rgba(99, 179, 237, 0.06)",
-                      border: "1px solid rgba(99,179,237,0.12)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(99, 179, 237, 0.1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "rgba(99, 179, 237, 0.06)";
-                    }}
+                    className="p-3.5 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200 bg-primary/5 border border-primary/10 hover:bg-primary/10"
                   >
                     <div className="flex items-center gap-2.5">
-                      <Brain className="w-4 h-4" style={{ color: "rgba(99, 179, 237, 0.7)" }} />
+                      <Brain className="w-4 h-4 text-primary" />
                       <div className="flex-1">
-                        <div className="text-[11px] font-semibold" style={{ color: "rgba(99,179,237,0.9)" }}>
-                          Create Intelligence Node
-                        </div>
-                        <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                          Drag to canvas · {results.length} findings · auto-links
-                        </div>
+                        <div className="text-[11px] font-semibold text-primary">Create Intelligence Node</div>
+                        <div className="text-[10px] text-muted-foreground">Drag to canvas · {results.length} findings · auto-links</div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-                  Drag items onto the canvas
-                </div>
+                <div className="text-[10px] text-muted-foreground/50">Drag items onto the canvas</div>
 
                 {results.map((result, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06 }}
-                  >
+                  <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                     <DraggableResultCard result={result} />
                   </motion.div>
                 ))}
               </>
             ) : (
               <>
-                <div className="text-[11px] font-medium mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>
-                  Status
-                </div>
+                <div className="text-[11px] font-medium mb-3 text-muted-foreground">Status</div>
                 <StatusCard icon={<Shield className="w-4 h-4" />} label="OPSEC" value="Protected" color="emerald" />
                 <StatusCard icon={<Globe className="w-4 h-4" />} label="Selected" value={`${selectedCount} nodes`} color="cyan" />
                 <StatusCard icon={<AlertTriangle className="w-4 h-4" />} label="Threat" value="Low" color="amber" />
 
                 <div className="mt-6">
-                  <div className="text-[11px] font-medium mb-3" style={{ color: "rgba(255,255,255,0.4)" }}>
-                    Quick Actions
-                  </div>
+                  <div className="text-[11px] font-medium mb-3 text-muted-foreground">Quick Actions</div>
                   <div className="grid grid-cols-2 gap-2">
                     {["Trace IP", "Find Emails", "WHOIS Lookup", "Social Scan"].map((action) => (
                       <button
                         key={action}
                         onClick={() => setQuery(action)}
-                        className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left"
-                        style={{
-                          background: "rgba(255, 255, 255, 0.04)",
-                          border: "1px solid rgba(255, 255, 255, 0.06)",
-                          color: "rgba(255, 255, 255, 0.6)",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.07)";
-                          e.currentTarget.style.color = "rgba(255, 255, 255, 0.85)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
-                          e.currentTarget.style.color = "rgba(255, 255, 255, 0.6)";
-                        }}
+                        className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left bg-secondary border border-border text-foreground/60 hover:bg-secondary/80 hover:text-foreground"
                       >
                         {action}
                       </button>

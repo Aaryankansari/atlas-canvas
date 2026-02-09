@@ -7,6 +7,7 @@ import { CanvasHeader } from "@/components/canvas/CanvasHeader";
 import { StatusBar } from "@/components/canvas/StatusBar";
 import { DeepDivePanel } from "@/components/canvas/DeepDivePanel";
 import { SelectionToolbar } from "@/components/canvas/SelectionToolbar";
+import { CanvasContextMenu } from "@/components/canvas/CanvasContextMenu";
 import { IntelNodeShapeUtil } from "@/components/canvas/intel-node/IntelNodeShapeUtil";
 import { useAutoLinker } from "@/components/canvas/intel-node/useAutoLinker";
 import { IntelNodeShape, INTEL_NODE_TYPE, IntelNodeProps } from "@/components/canvas/intel-node/types";
@@ -186,6 +187,9 @@ const Index = () => {
 
         {/* Selection connector toolbar */}
         <SelectionToolbar editor={editor} selectedCount={selectedCount} />
+
+        {/* Right-click context menu */}
+        <CanvasContextMenu editor={editor} onDeepDive={(node) => setDeepDiveNode(node)} />
 
         {/* Analyst Panel */}
         <AnalystPanel

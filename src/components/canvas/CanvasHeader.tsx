@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Radar, PanelRightOpen, PanelRightClose, Download, Layers, LayoutGrid } from "lucide-react";
+import { Radar, Download, Globe, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 import { ExportMenu } from "./ExportMenu";
 
@@ -9,6 +9,8 @@ interface CanvasHeaderProps {
   onSmartLayout: () => void;
   onExportPng: () => void;
   onExportSvg: () => void;
+  satelliteMode: boolean;
+  onToggleSatellite: () => void;
 }
 
 export const CanvasHeader = ({
@@ -17,6 +19,8 @@ export const CanvasHeader = ({
   onSmartLayout,
   onExportPng,
   onExportSvg,
+  satelliteMode,
+  onToggleSatellite,
 }: CanvasHeaderProps) => {
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -25,108 +29,97 @@ export const CanvasHeader = ({
       initial={{ y: -48, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      className="h-12 flex items-center justify-between px-5 z-50 relative bg-card/80 backdrop-blur-xl border-b border-border"
+      className="h-12 flex items-center justify-between px-5 z-50 relative bg-card/85 backdrop-blur-3xl border-b border-primary/10"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <motion.div
           className="flex items-center gap-2.5"
           whileHover={{ scale: 1.02 }}
           transition={{ type: "spring", stiffness: 400 }}
         >
-          <motion.div
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-primary/10"
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          >
-            <Radar className="w-4 h-4 text-primary" />
-          </motion.div>
-          <h1 className="text-sm font-semibold tracking-tight text-foreground">
-            ICARUS
-          </h1>
+          <div className="relative">
+            <motion.div
+              className="w-7 h-7 rounded-full flex items-center justify-center bg-primary/20 border border-primary/20 shadow-[0_0_15px_hsl(var(--primary)/0.2)]"
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            >
+              <Radar className="w-4 h-4 text-primary" />
+            </motion.div>
+            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary threat-pulse" />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-[13px] font-black tracking-[0.15em] text-foreground leading-none">
+              ATLAS
+            </h1>
+            <span className="text-[8px] font-bold text-primary/60 tracking-widest uppercase mt-0.5">Visint Alpha</span>
+          </div>
         </motion.div>
-        <div className="h-4 w-px bg-border" />
-        <motion.span
-          initial={{ opacity: 0, x: -8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-[11px] text-muted-foreground font-medium"
-        >
-          Canvas
-        </motion.span>
+
+        <div className="h-6 w-px bg-border/40 mx-2" />
+
+        {/* Threat Level Indicator */}
+        <div className="flex items-center gap-4 px-3 py-1 rounded-lg bg-black/40 border border-border/50">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tighter">Threat:</span>
+            <div className="flex gap-0.5">
+              <div className="w-1.5 h-3 bg-primary rounded-sm shadow-[0_0_5px_hsl(var(--primary))]" />
+              <div className="w-1.5 h-3 bg-primary rounded-sm shadow-[0_0_5px_hsl(var(--primary))]" />
+              <div className="w-1.5 h-3 bg-muted rounded-sm" />
+              <div className="w-1.5 h-3 bg-muted rounded-sm" />
+            </div>
+            <span className="text-[9px] font-black text-primary uppercase tracking-widest ml-1">ELEVATED</span>
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center gap-1 relative">
+      <div className="flex items-center gap-2 relative">
         <motion.button
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+          onClick={onToggleSatellite}
+          whileHover={{ scale: 1.05 }}
+          className={`flex items-center gap-2 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all duration-300 ${satelliteMode
+            ? "bg-primary text-primary-foreground shadow-[0_0_15px_hsl(var(--primary)/0.4)]"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border/50"
+            }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          {satelliteMode ? "Satellite Active" : "Grid Mode"}
+        </motion.button>
+
+        <div className="h-6 w-px bg-border/40 mx-2" />
+
+        <motion.button
           onClick={onSmartLayout}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors duration-200"
-          title="Auto-arrange nodes based on connections"
+          className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
         >
           <LayoutGrid className="w-3.5 h-3.5" />
-          Smart Layout
+          Auto-Map
         </motion.button>
-        {[
-          { icon: Layers, label: "Scenes" },
-        ].map((item, i) => (
-          <motion.button
-            key={item.label}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 + i * 0.08 }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors duration-200"
-          >
-            <item.icon className="w-3.5 h-3.5" />
-            {item.label}
-          </motion.button>
-        ))}
+
         <motion.button
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
           onClick={() => setExportOpen(!exportOpen)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors duration-200"
+          className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
         >
           <Download className="w-3.5 h-3.5" />
           Export
         </motion.button>
+
         <ExportMenu
           isOpen={exportOpen}
           onClose={() => setExportOpen(false)}
           onExportPng={onExportPng}
           onExportSvg={onExportSvg}
         />
-        <div className="h-4 w-px mx-1 bg-border" />
+
+        <div className="w-6" /> {/* Spacer */}
+
         <motion.button
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
           onClick={onToggleAnalyst}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-full transition-all duration-300 ${
-            analystOpen
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
+          className={`flex items-center gap-2.5 px-5 py-1.5 text-[11px] font-black uppercase tracking-[0.1em] rounded-full transition-all duration-500 ${analystOpen
+            ? "bg-primary text-primary-foreground shadow-[0_0_20px_hsl(var(--primary)/0.3)] border border-primary/50"
+            : "bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border/50"
+            }`}
         >
-          <motion.span
-            animate={{ rotate: analystOpen ? 180 : 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          >
-            {analystOpen ? (
-              <PanelRightClose className="w-3.5 h-3.5" />
-            ) : (
-              <PanelRightOpen className="w-3.5 h-3.5" />
-            )}
-          </motion.span>
+          <Radar className={`w-4 h-4 ${analystOpen ? "animate-spin" : ""}`} />
           AI Analyst
         </motion.button>
       </div>

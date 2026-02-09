@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Brain, Search, Shield, Globe, AlertTriangle, Sparkles, Mail, User, Hash, AtSign, ExternalLink, Activity, Crosshair, Network, Zap, Clock, Layers } from "lucide-react";
-import { Editor } from "tldraw";
-import { useState, forwardRef } from "react";
+import { Editor, createShapeId } from "tldraw";
+import { useState, forwardRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DraggableResultCard, type ScanResult } from "./DraggableResultCard";
 import { StatusCard } from "./StatusCard";
@@ -60,14 +60,86 @@ interface FullScanData {
   recommendations?: any[];
   pivotSuggestions?: any[];
   rawIntel?: any;
+  researchSteps?: string[];
 }
 
 type ScanMode = "quick" | "deep";
 type PanelTab = "scan" | "history";
 
+const ResearchProgress = ({ scanning, mode }: { scanning: boolean, mode: string }) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const steps = [
+    "Initializing Atlas Neural Link...",
+    "Bypassing perimeter firewalls...",
+    "Querying surface web indices...",
+    "Accessing darknet data repositories...",
+    "Correlating breach identity footprints...",
+    "Synthesizing tactical intelligence..."
+  ];
+
+  useEffect(() => {
+    if (scanning) {
+      const interval = setInterval(() => {
+        setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
+      }, mode === "deep" ? 2000 : 800);
+      return () => clearInterval(interval);
+    } else {
+      setCurrentStep(0);
+    }
+  }, [scanning, mode]);
+
+  if (!scanning) return null;
+
+  return (
+    <div className="space-y-4 p-4 rounded-2xl bg-primary/5 border border-primary/20 backdrop-blur-md overflow-hidden relative">
+      <div className="absolute top-0 left-0 w-full h-[2px] loading-bar-sweep" />
+
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-primary animate-pulse" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Deep Research Active</span>
+        </div>
+        <span className="text-[10px] font-mono text-primary/60">{Math.round((currentStep + 1) / steps.length * 100)}%</span>
+      </div>
+
+      <div className="space-y-2">
+        {steps.map((step, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -5 }}
+            animate={{
+              opacity: i <= currentStep ? 1 : 0.2,
+              x: 0,
+              color: i === currentStep ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))"
+            }}
+            className="flex items-center gap-3"
+          >
+            <div className={`w-1 h-1 rounded-full ${i <= currentStep ? "bg-primary shadow-[0_0_8px_hsl(var(--primary))]" : "bg-muted"}`} />
+            <span className={`text-[11px] font-mono ${i === currentStep ? "font-bold step-pulse" : ""}`}>
+              {step}
+            </span>
+            {i < currentStep && <Shield className="w-3 h-3 text-emerald-500 ml-auto" />}
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="pt-2">
+        <div className="h-1 w-full bg-muted/30 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]"
+            initial={{ width: "0%" }}
+            animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: AnalystPanelProps) => {
   const [query, setQuery] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [researchSteps, setResearchSteps] = useState<string[]>([]);
   const [results, setResults] = useState<ScanResult[]>([]);
   const [scannedQuery, setScannedQuery] = useState("");
   const [summary, setSummary] = useState("");
@@ -78,6 +150,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
   const [activeTab, setActiveTab] = useState<PanelTab>("scan");
   const [batchOpen, setBatchOpen] = useState(false);
   const [batchScanning, setBatchScanning] = useState(false);
+  const [autoMap, setAutoMap] = useState(true);
 
   const { history, loading: historyLoading, saveInvestigation, deleteInvestigation } = useInvestigationHistory();
 
@@ -94,6 +167,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
       setSummary(data.summary || "");
       setRiskLevel(data.riskLevel || "low");
       setSourcesQueried(data.rawIntel?.sources || data.rawIntel?.sourcesQueried || []);
+      setResearchSteps(data.researchSteps || []);
 
       const scanData: FullScanData = {
         summary: data.summary || "",
@@ -111,8 +185,35 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
         recommendations: data.recommendations,
         pivotSuggestions: data.pivotSuggestions,
         rawIntel: data.rawIntel,
+        researchSteps: data.researchSteps,
       };
       setFullScanData(scanData);
+
+      if (autoMap && editor) {
+        const { x, y } = editor.getViewportPageBounds().center;
+        const id = createShapeId();
+        editor.createShape({
+          id,
+          type: "intel-node",
+          x: x - 140,
+          y: y - 85,
+          props: {
+            label: queryText,
+            entityType: entityType as any,
+            riskLevel: scanData.riskLevel as any,
+            summary: scanData.summary,
+            aiBio: scanData.aiBio,
+            confidence: "high",
+            metadata: scanData.metadata,
+            categories: scanData.categories,
+            evidenceLinks: scanData.evidenceLinks,
+            rawResults: scanData.results,
+            isWatched: scanMode === "deep",
+          },
+        });
+        editor.select(id);
+        toast.success("Intelligence node spawned");
+      }
 
       // Save to history
       saveInvestigation({
@@ -141,6 +242,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
   const handleScan = async () => {
     if (!query.trim() || scanning) return;
     setScanning(true);
+    setResearchSteps([]);
     setResults([]);
     setSummary("");
     setRiskLevel("");
@@ -148,18 +250,39 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     setSourcesQueried([]);
 
     const entityType = detectEntityType(query);
-    const endpoint = scanMode === "deep" ? "deep-search" : "osint-scan";
 
     try {
-      const { data, error } = await supabase.functions.invoke(endpoint, {
-        body: { query: query.trim(), entityType },
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/scan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: query.trim(), mode: scanMode }),
       });
-      if (error) throw error;
+
+      if (!response.ok) {
+        throw new Error(`Engine offline: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       processScanResult(data, entityType, query.trim());
       setScannedQuery(query);
     } catch (err: any) {
       console.error("Scan failed:", err);
-      toast.error(err.message || "Scan failed. Check your connection.");
+      toast.error(err.message || "OSINT Engine unreachable. Ensure backend is running.");
+
+      // Fallback to Supabase if local fails (optional, based on your preference)
+      /*
+      try {
+        const endpoint = scanMode === "deep" ? "deep-search" : "osint-scan";
+        const { data, error } = await supabase.functions.invoke(endpoint, {
+          body: { query: query.trim(), entityType },
+        });
+        if (error) throw error;
+        processScanResult(data, entityType, query.trim());
+      } catch (supaErr) {
+        toast.error("Cloud fallback also failed.");
+      }
+      */
     } finally {
       setScanning(false);
     }
@@ -171,13 +294,16 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
 
     for (const entity of entities) {
       const entityType = detectEntityType(entity);
-      const endpoint = scanMode === "deep" ? "deep-search" : "osint-scan";
-
       try {
-        const { data, error } = await supabase.functions.invoke(endpoint, {
-          body: { query: entity.trim(), entityType },
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+        const response = await fetch(`${apiUrl}/api/scan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: entity.trim(), mode: scanMode }),
         });
-        if (!error && data) {
+
+        if (response.ok) {
+          const data = await response.json();
           // Save each result
           await saveInvestigation({
             query: entity.trim(),
@@ -197,12 +323,14 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
             recommendations: data.recommendations || null,
             raw_intel: data.rawIntel || null,
           });
+          completed++;
+          toast.success(`Captured: ${entity}`);
+        } else {
+          throw new Error("API error");
         }
-        completed++;
-        toast.success(`Scanned ${completed}/${entities.length}: ${entity}`);
       } catch {
         completed++;
-        toast.error(`Failed: ${entity}`);
+        toast.error(`Failed connection: ${entity}`);
       }
     }
 
@@ -264,7 +392,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
       evidenceLinks: fullScanData.evidenceLinks,
       rawResults: fullScanData.results,
     };
-    e.dataTransfer.setData("application/icarus-node", JSON.stringify(data));
+    e.dataTransfer.setData("application/atlas-node", JSON.stringify(data));
     e.dataTransfer.effectAllowed = "copy";
   };
 
@@ -309,11 +437,10 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "bg-card text-foreground shadow-sm border border-border"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium transition-all duration-200 ${activeTab === tab.id
+                    ? "bg-card text-foreground shadow-sm border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   <tab.icon className="w-3 h-3" />
                   {tab.label}
@@ -339,16 +466,15 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
             <>
               {/* Mode Toggle */}
               <div className="px-4 pt-2 pb-1">
-                <div className="flex gap-1 p-0.5 rounded-xl bg-muted/50 border border-border">
+                <div className="flex gap-1 p-0.5 rounded-xl bg-muted/30 border border-border/50">
                   {(["quick", "deep"] as const).map((mode) => (
                     <button
                       key={mode}
                       onClick={() => setScanMode(mode)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-medium transition-all duration-200 ${
-                        scanMode === mode
-                          ? "bg-card text-foreground shadow-sm border border-border"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-semibold transition-all duration-300 ${scanMode === mode
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        }`}
                     >
                       {mode === "quick" ? (
                         <><Zap className="w-3 h-3" /> Quick Scan</>
@@ -360,17 +486,18 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                 </div>
               </div>
 
-              {/* Search */}
-              <div className="p-4 border-b border-border space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              {/* Search & Controls */}
+              <div className="p-4 border-b border-border/50 space-y-4">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-primary/5 rounded-xl blur-md opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleScan()}
-                    placeholder="Email, IP, username, domain, wallet..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all font-mono"
+                    placeholder="Search footprint..."
+                    className="relative w-full pl-10 pr-4 py-3 rounded-xl text-sm text-foreground placeholder:text-muted-foreground/50 bg-muted/50 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all font-mono"
                   />
                 </div>
 
@@ -378,11 +505,10 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                   <button
                     onClick={handleScan}
                     disabled={!query.trim() || scanning}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                      scanMode === "deep"
-                        ? "bg-gradient-to-r from-primary to-emerald-500 text-primary-foreground hover:opacity-90"
-                        : "bg-primary text-primary-foreground hover:opacity-90"
-                    }`}
+                    className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${scanMode === "deep"
+                      ? "bg-gradient-to-r from-primary via-emerald-500 to-primary background-animate text-primary-foreground hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
+                      : "bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] shadow-lg shadow-primary/20"
+                      }`}
                   >
                     {scanning ? (
                       <>
@@ -391,21 +517,39 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                           animate={{ rotate: 360 }}
                           transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
                         />
-                        {scanMode === "deep" ? "Deep scanning..." : "Scanning..."}
+                        {scanMode === "deep" ? "Analyzing..." : "Scanning..."}
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-3.5 h-3.5" />
-                        {scanMode === "deep" ? "Deep Search" : "Scan"}
+                        {scanMode === "deep" ? "Run Intelligence" : "Deep Scan"}
                       </>
                     )}
                   </button>
                   <button
                     onClick={() => setBatchOpen(!batchOpen)}
-                    className="px-3 py-2.5 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-                    title="Batch scan multiple entities"
+                    className="px-3.5 py-3 rounded-xl text-xs font-medium bg-muted/50 border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-all active:scale-95"
+                    title="Batch investigation"
                   >
-                    <Layers className="w-3.5 h-3.5" />
+                    <Layers className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Auto-Map Toggle */}
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2 cursor-help" title="Automatically spawn discovery nodes on the canvas.">
+                    <div className={`w-2 h-2 rounded-full ${autoMap ? "bg-primary animate-pulse shadow-[0_0_8px_hsl(var(--primary))]" : "bg-muted-foreground/30"}`} />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Auto-Map Intelligence</span>
+                  </div>
+                  <button
+                    onClick={() => setAutoMap(!autoMap)}
+                    className={`w-9 h-5 rounded-full transition-all duration-300 relative ${autoMap ? "bg-primary" : "bg-muted"}`}
+                  >
+                    <motion.div
+                      animate={{ x: autoMap ? 18 : 2 }}
+                      initial={false}
+                      className="absolute top-1 w-3 h-3 rounded-full bg-white shadow-sm"
+                    />
                   </button>
                 </div>
 
@@ -418,83 +562,84 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
               </div>
 
               {/* Results */}
-              <div className="p-4 space-y-3 flex-1 overflow-y-auto">
-                {(results.length > 0 || fullScanData) ? (
+              <div className="p-4 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+                <ResearchProgress scanning={scanning} mode={scanMode} />
+
+                {(results.length > 0 || fullScanData) && !scanning ? (
                   <>
-                    <div className="flex items-center justify-between">
-                      <div className="text-[11px] font-mono text-muted-foreground">
-                        Results for <span className="text-primary font-semibold">{scannedQuery}</span>
+                    <div className="flex items-center justify-between px-1">
+                      <div className="text-[11px] font-mono text-muted-foreground/60 flex items-center gap-2">
+                        <Activity className="w-3 h-3" />
+                        Target: <span className="text-primary font-bold">{scannedQuery}</span>
                       </div>
                       {sourcesQueried.length > 0 && (
-                        <span className="text-[9px] text-muted-foreground/60 font-mono">
-                          {sourcesQueried.length} sources
+                        <span className="text-[9px] text-muted-foreground/40 font-mono bg-muted/30 px-2 py-0.5 rounded-md">
+                          {sourcesQueried.length} SDKs
                         </span>
                       )}
                     </div>
 
-                    {/* Classification badge for deep search */}
+                    {/* Classification badge */}
                     {fullScanData?.classification && (
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-muted/30"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-primary/20 bg-primary/5 backdrop-blur-sm"
                       >
-                        <Crosshair className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-[10px] font-medium text-muted-foreground">Classification:</span>
-                        <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md ${
-                          fullScanData.classification === "malicious"
-                            ? "bg-destructive/10 text-destructive"
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Shield className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[9px] font-bold text-primary/60 uppercase tracking-tighter">AI Classification</div>
+                          <div className={`text-xs font-black uppercase tracking-widest ${fullScanData.classification === "malicious"
+                            ? "text-red-500 glitch-text"
                             : fullScanData.classification === "suspicious"
-                              ? "bg-amber-500/10 text-amber-600"
-                              : "bg-primary/10 text-primary"
-                        }`}>
-                          {fullScanData.classification}
-                        </span>
+                              ? "text-amber-500"
+                              : "text-primary"
+                            }`}>
+                            {fullScanData.classification}
+                          </div>
+                        </div>
                       </motion.div>
                     )}
 
                     {summary && (
-                      <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/10">
-                        <p className="text-[11px] leading-relaxed text-foreground/70">{summary}</p>
+                      <div className="p-4 rounded-xl bg-muted/30 border border-border/50 relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-primary/30" />
+                        <p className="text-[12px] leading-relaxed text-muted-foreground group-hover:text-foreground transition-colors italic">"{summary}"</p>
                         {riskLevel && (
-                          <span
-                            className="mt-2 inline-block text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md"
-                            style={{
-                              background: riskLevel === "critical" || riskLevel === "high" ? "rgba(220,38,38,0.08)" : riskLevel === "medium" ? "rgba(217,119,6,0.08)" : "rgba(22,163,74,0.08)",
-                              color: riskLevel === "critical" || riskLevel === "high" ? "#dc2626" : riskLevel === "medium" ? "#d97706" : "#16a34a",
-                            }}
-                          >
-                            {riskLevel}
-                          </span>
+                          <div className="mt-3 flex items-center gap-2">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Risk Level:</span>
+                            <span
+                              className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md border"
+                              style={{
+                                background: riskLevel === "critical" || riskLevel === "high" ? "rgba(239,68,68,0.1)" : riskLevel === "medium" ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)",
+                                color: riskLevel === "critical" || riskLevel === "high" ? "#ef4444" : riskLevel === "medium" ? "#f59e0b" : "#10b981",
+                                borderColor: riskLevel === "critical" || riskLevel === "high" ? "#ef444433" : riskLevel === "medium" ? "#f59e0b33" : "#10b98133",
+                              }}
+                            >
+                              {riskLevel}
+                            </span>
+                          </div>
                         )}
-                      </div>
-                    )}
-
-                    {/* Sources queried */}
-                    {sourcesQueried.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {sourcesQueried.map((src, i) => (
-                          <span key={i} className="text-[9px] px-2 py-0.5 rounded-md bg-muted border border-border text-muted-foreground font-mono">
-                            {src}
-                          </span>
-                        ))}
                       </div>
                     )}
 
                     {/* Pivot Suggestions */}
                     {fullScanData?.pivotSuggestions && fullScanData.pivotSuggestions.length > 0 && (
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5">
-                          <Network className="w-3 h-3" /> Investigate Next
+                      <div className="space-y-3 pt-2">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 px-1">
+                          <Network className="w-3.5 h-3.5 text-primary" /> Discovery Pivots
                         </span>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {fullScanData.pivotSuggestions.slice(0, 5).map((p: any, i: number) => (
                             <button
                               key={i}
                               onClick={() => handlePivot(p.entity)}
-                              className="text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-all font-mono"
+                              className="text-[11px] px-3 py-2 rounded-lg bg-muted/50 border border-border/50 text-foreground hover:border-primary/50 hover:bg-primary/5 transition-all font-mono group"
                               title={p.rationale}
                             >
+                              <span className="text-primary/50 group-hover:text-primary transition-colors mr-1">#</span>
                               {p.entity}
                             </button>
                           ))}
@@ -502,43 +647,31 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                       </div>
                     )}
 
-                    {/* Drag to canvas */}
-                    {fullScanData && (
-                      <div
-                        draggable
-                        onDragStart={handleDragFullResult}
-                        className="p-3.5 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-200 bg-primary/5 border border-primary/10 hover:bg-primary/10"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Brain className="w-4 h-4 text-primary" />
-                          <div className="flex-1">
-                            <div className="text-[11px] font-semibold text-primary">Create Intelligence Node</div>
-                            <div className="text-[10px] text-muted-foreground">Drag to canvas · {results.length} findings · auto-links</div>
-                          </div>
-                        </div>
+                    <div className="pt-2">
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1 flex justify-between items-center">
+                        <span>Intelligence Findings</span>
+                        <span className="text-[9px] opacity-40">Drag to Workspace</span>
                       </div>
-                    )}
-
-                    <div className="text-[10px] text-muted-foreground/60">Drag items onto the canvas</div>
-
-                    {results.map((result, i) => (
-                      <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                        <DraggableResultCard result={result} />
-                      </motion.div>
-                    ))}
+                      <div className="space-y-2.5">
+                        {results.map((result, i) => (
+                          <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
+                            <DraggableResultCard result={result} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
 
                     {/* Recommendations */}
                     {fullScanData?.recommendations && fullScanData.recommendations.length > 0 && (
-                      <div className="space-y-2 pt-2 border-t border-border">
-                        <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5">
-                          <Shield className="w-3 h-3" /> Recommendations
+                      <div className="space-y-3 pt-4 border-t border-border/50">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 px-1">
+                          <Shield className="w-3.5 h-3.5 text-primary" /> Counterintelligence
                         </span>
-                        {fullScanData.recommendations.slice(0, 4).map((rec: any, i: number) => (
-                          <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl bg-muted/30 border border-border">
-                            <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
-                              (rec.priority || "medium") === "high" ? "bg-destructive" : (rec.priority || "medium") === "medium" ? "bg-amber-500" : "bg-primary"
-                            }`} />
-                            <span className="text-[11px] text-foreground/70 leading-relaxed">
+                        {fullScanData.recommendations.slice(0, 3).map((rec: any, i: number) => (
+                          <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                            <div className={`w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0 ${(rec.priority || "medium") === "high" ? "bg-red-500 animate-pulse" : (rec.priority || "medium") === "medium" ? "bg-amber-500" : "bg-primary"
+                              }`} />
+                            <span className="text-[11px] text-muted-foreground leading-relaxed">
                               {typeof rec === "string" ? rec : rec.action}
                             </span>
                           </div>
@@ -548,28 +681,32 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                   </>
                 ) : (
                   <>
-                    <div className="text-[11px] font-medium mb-3 text-muted-foreground">Status</div>
-                    <StatusCard icon={<Shield className="w-4 h-4" />} label="OPSEC" value="Protected" color="emerald" />
-                    <StatusCard icon={<Globe className="w-4 h-4" />} label="Selected" value={`${selectedCount} nodes`} color="cyan" />
-                    <StatusCard icon={<AlertTriangle className="w-4 h-4" />} label="Threat" value="Low" color="amber" />
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">Telemetry Status</div>
+                    <div className="space-y-2">
+                      <StatusCard icon={<Shield className="w-4 h-4" />} label="OPSEC Status" value="Encrypted" color="emerald" />
+                      <StatusCard icon={<Globe className="w-4 h-4" />} label="Active Nodes" value={`${selectedCount} units`} color="cyan" />
+                      <StatusCard icon={<AlertTriangle className="w-4 h-4" />} label="Threat Level" value="Nominal" color="amber" />
+                    </div>
 
-                    <div className="mt-6">
-                      <div className="text-[11px] font-medium mb-3 text-muted-foreground">Quick Actions</div>
+                    <div className="mt-8">
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">Quick Scanners</div>
                       <div className="grid grid-cols-2 gap-2">
                         {[
-                          { label: "Trace IP", hint: "192.168.1.1" },
-                          { label: "Find Emails", hint: "user@example.com" },
-                          { label: "WHOIS Lookup", hint: "example.com" },
-                          { label: "Social Scan", hint: "@username" },
-                          { label: "Breach Check", hint: "user@email.com" },
-                          { label: "Wallet Trace", hint: "1A1zP1..." },
+                          { label: "IP Tracer", hint: "8.8.8.8", icon: Globe },
+                          { label: "Email Breach", hint: "leak@intel.com", icon: Mail },
+                          { label: "WHOIS Deep", hint: "target.com", icon: ExternalLink },
+                          { label: "Profile Recon", hint: "@shadow", icon: User },
+                          { label: "Wallet Trace", hint: "bc1q...", icon: Hash },
+                          { label: "DNS Audit", hint: "ns1.target.com", icon: Network },
                         ].map((action) => (
                           <button
                             key={action.label}
                             onClick={() => { setQuery(action.hint); setScanMode("deep"); }}
-                            className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left bg-muted border border-border text-foreground/60 hover:bg-muted/80 hover:text-foreground hover:border-primary/10"
+                            className="p-3 rounded-xl text-left bg-muted/40 border border-border/50 hover:border-primary/30 hover:bg-muted transition-all group"
                           >
-                            {action.label}
+                            <action.icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
+                            <div className="text-[11px] font-bold text-foreground/80">{action.label}</div>
+                            <div className="text-[9px] text-muted-foreground font-mono mt-0.5 truncate">{action.hint}</div>
                           </button>
                         ))}
                       </div>
@@ -579,6 +716,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
               </div>
             </>
           )}
+
         </motion.div>
       )}
     </AnimatePresence>

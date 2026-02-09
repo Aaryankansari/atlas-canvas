@@ -1,4 +1,4 @@
-import { IntelNodeShape, entityIcons } from "./types";
+import { IntelNodeShape, entityIcons, riskColors } from "./types";
 
 interface IntelNodeComponentProps {
   shape: IntelNodeShape;
@@ -19,9 +19,8 @@ const riskBadgeStyle: Record<string, { bg: string; color: string }> = {
 };
 
 export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
-  const { label, entityType, riskLevel, summary, confidence, aiBio } = shape.props;
+  const { label, entityType, riskLevel, summary, confidence, aiBio, isWatched } = shape.props;
   const icon = entityIcons[entityType] || "🔍";
-  const accent = riskAccent[riskLevel] || riskAccent.low;
   const badge = riskBadgeStyle[riskLevel] || riskBadgeStyle.low;
 
   const meta = shape.props.metadata;
@@ -34,38 +33,52 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
 
   return (
     <div
+      className={`glass-panel data-float relative premium-glow-border ${isWatched ? "radar-pulse glow-cyan" : ""}`}
       style={{
         width: "100%",
         height: "100%",
-        background: "#ffffff",
-        border: "1px solid #e0e0e0",
         borderRadius: 20,
         padding: 18,
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        gap: 12,
         fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-        color: "#262626",
+        color: "hsl(var(--foreground))",
         overflow: "hidden",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02)",
         cursor: "pointer",
         position: "relative",
-        transition: "box-shadow 0.25s ease, transform 0.2s ease",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
+      {/* Risk indicator bar */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: `hsl(var(--neon-${riskColors[riskLevel]}))`,
+          zIndex: 10
+        }}
+      />
+
+      {isWatched && <div className="digital-scan" />}
+
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div
           style={{
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             borderRadius: 12,
-            background: "#f5f5f5",
+            background: "hsl(var(--muted))",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 18,
+            fontSize: 20,
             flexShrink: 0,
+            border: "1px solid hsl(var(--border))",
           }}
         >
           {icon}
@@ -73,14 +86,14 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: "-0.01em",
+              fontSize: 15,
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
               lineHeight: 1.2,
-              color: "#262626",
+              color: "hsl(var(--foreground))",
             }}
           >
             {label}
@@ -88,10 +101,11 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           <div
             style={{
               fontSize: 11,
-              color: "#999",
-              textTransform: "capitalize",
+              color: "hsl(var(--muted-foreground))",
+              textTransform: "uppercase",
               marginTop: 2,
-              letterSpacing: "0.01em",
+              letterSpacing: "0.05em",
+              fontWeight: 600,
             }}
           >
             {entityType}
@@ -100,15 +114,16 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
 
         <span
           style={{
-            fontSize: 9,
-            fontWeight: 600,
+            fontSize: 10,
+            fontWeight: 800,
             textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            padding: "3px 8px",
-            borderRadius: 8,
+            letterSpacing: "0.08em",
+            padding: "4px 8px",
+            borderRadius: 6,
             background: badge.bg,
             color: badge.color,
             flexShrink: 0,
+            border: `1px solid ${badge.color}33`,
           }}
         >
           {riskLevel}
@@ -119,9 +134,9 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
       {(aiBio || summary) && (
         <div
           style={{
-            fontSize: 12,
-            lineHeight: 1.55,
-            color: "#777",
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: "hsl(var(--muted-foreground))",
             overflow: "hidden",
             textOverflow: "ellipsis",
             display: "-webkit-box",
@@ -140,42 +155,54 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          paddingTop: 8,
+          borderTop: "1px solid hsl(var(--border) / 0.5)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div
+            className={confidence === "high" ? "glow-cyan" : ""}
             style={{
-              width: 6,
-              height: 6,
+              width: 8,
+              height: 8,
               borderRadius: "50%",
-              background: confidence === "high" ? "#16a34a" : confidence === "medium" ? "#3b82f6" : "#d1d5db",
+              background: confidence === "high" ? "hsl(var(--neon-cyan))" : confidence === "medium" ? "hsl(var(--neon-amber))" : "hsl(var(--muted-foreground))",
             }}
           />
           <span
             style={{
-              fontSize: 10,
-              color: "#aaa",
+              fontSize: 11,
+              color: "hsl(var(--muted-foreground))",
               textTransform: "capitalize",
               letterSpacing: "0.02em",
-              fontWeight: 500,
+              fontWeight: 600,
             }}
           >
-            {confidence}
+            {confidence} Match
           </span>
         </div>
 
         {indicatorCount > 0 && (
-          <span
-            style={{
-              fontSize: 10,
-              color: "#bbb",
-              fontWeight: 500,
-            }}
-          >
-            {indicatorCount} link{indicatorCount !== 1 ? "s" : ""}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span
+              style={{
+                fontSize: 11,
+                color: "hsl(var(--primary))",
+                fontWeight: 700,
+                background: "hsl(var(--primary) / 0.1)",
+                padding: "2px 6px",
+                borderRadius: 4,
+              }}
+            >
+              {indicatorCount}
+            </span>
+            <span style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 500 }}>
+              Pivots
+            </span>
+          </div>
         )}
       </div>
     </div>
   );
 };
+

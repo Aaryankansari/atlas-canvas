@@ -25,6 +25,7 @@ export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
     evidenceLinks: T.arrayOf(T.string) as any,
     aiBio: T.string,
     rawResults: T.jsonValue as any,
+    isWatched: T.boolean,
   };
 
   override canEdit() {
@@ -53,6 +54,7 @@ export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
       evidenceLinks: [],
       aiBio: "",
       rawResults: [],
+      isWatched: false,
     };
   }
 

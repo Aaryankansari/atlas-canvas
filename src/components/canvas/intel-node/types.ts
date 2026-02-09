@@ -31,6 +31,7 @@ export interface IntelNodeProps {
     value: string;
     confidence: string;
   }>;
+  isWatched?: boolean;
 }
 
 export type IntelNodeShape = TLBaseShape<"intel-node", IntelNodeProps>;

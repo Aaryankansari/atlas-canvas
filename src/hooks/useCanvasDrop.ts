@@ -11,7 +11,7 @@ export function useCanvasDrop(editor: Editor | null, canvasRef: RefObject<HTMLDi
       e.stopPropagation();
       setIsDraggingOver(false);
 
-      const raw = e.dataTransfer.getData("application/icarus-node");
+      const raw = e.dataTransfer.getData("application/atlas-node");
       if (!raw || !editor) return;
 
       try {
@@ -79,7 +79,7 @@ export function useCanvasDrop(editor: Editor | null, canvasRef: RefObject<HTMLDi
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (e.dataTransfer.types.includes("application/icarus-node")) {
+    if (e.dataTransfer.types.includes("application/atlas-node")) {
       e.preventDefault();
       e.stopPropagation();
       e.dataTransfer.dropEffect = "copy";
@@ -87,7 +87,7 @@ export function useCanvasDrop(editor: Editor | null, canvasRef: RefObject<HTMLDi
   }, []);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
-    if (e.dataTransfer.types.includes("application/icarus-node")) {
+    if (e.dataTransfer.types.includes("application/atlas-node")) {
       e.preventDefault();
       setIsDraggingOver(true);
     }

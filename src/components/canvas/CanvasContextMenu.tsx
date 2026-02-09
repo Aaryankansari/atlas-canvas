@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Editor, TLShapeId } from "tldraw";
-import { Link, Unlink, Trash2, Copy, ArrowRightLeft, Layers, Eye } from "lucide-react";
+import { Link, Unlink, Trash2, Copy, ArrowRightLeft, Layers, Eye, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { connectShapes, connectAllSelected } from "./connector/useConnector";
 import { INTEL_NODE_TYPE, IntelNodeShape } from "./intel-node/types";
 
@@ -118,6 +119,23 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
     close();
   }, [editor, menu, onDeepDive, close]);
 
+  const handleToggleWatch = useCallback(() => {
+    if (!editor || !menu) return;
+    const shape = editor.getShape(menu.shapeId);
+    if (shape && shape.type === INTEL_NODE_TYPE) {
+      const isCurrentlyWatched = (shape as IntelNodeShape).props.isWatched;
+      editor.updateShape({
+        id: menu.shapeId,
+        type: INTEL_NODE_TYPE,
+        props: { isWatched: !isCurrentlyWatched },
+      });
+      if (!isCurrentlyWatched) {
+        toast.success(`Broadcasting telemetry for ${shape.props.label}`);
+      }
+    }
+    close();
+  }, [editor, menu, close]);
+
   const isIntelNode = menu && editor ? editor.getShape(menu.shapeId)?.type === INTEL_NODE_TYPE : false;
   const selectedCount = editor?.getSelectedShapes().length ?? 0;
 
@@ -136,6 +154,7 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
     { kind: "divider" },
     { kind: "section", section: "Actions" },
     ...(isIntelNode && onDeepDive ? [{ kind: "item" as const, icon: Eye, label: "Deep dive", onClick: handleDeepDive, accent: true }] : []),
+    ...(isIntelNode ? [{ kind: "item" as const, icon: Sparkles, label: (editor?.getShape(menu!.shapeId) as IntelNodeShape)?.props.isWatched ? "Stop Watching" : "Watch entity", onClick: handleToggleWatch, accent: true }] : []),
     { kind: "item", icon: Copy, label: "Duplicate", onClick: handleDuplicate },
     { kind: "item", icon: Layers, label: "Bring to front", onClick: handleBringToFront },
     { kind: "item", icon: Trash2, label: "Delete", onClick: handleDelete, variant: "destructive" },

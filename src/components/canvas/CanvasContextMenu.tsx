@@ -20,17 +20,13 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
   const [menu, setMenu] = useState<ContextMenuState | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Listen for right-click on the canvas container
   useEffect(() => {
     if (!editor) return;
-
     const container = document.querySelector(".tl-container");
     if (!container) return;
 
     const handleContextMenu = (e: Event) => {
       const me = e as MouseEvent;
-
-      // Find shape at click point
       const point = editor.screenToPage({ x: me.clientX, y: me.clientY });
       const shapesAtPoint = editor.getShapesAtPoint(point);
 
@@ -44,7 +40,6 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
 
       const topShape = shapesAtPoint[shapesAtPoint.length - 1];
       editor.select(topShape.id);
-
       setMenu({ x: me.clientX, y: me.clientY, shapeId: topShape.id });
     };
 
@@ -52,19 +47,14 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
     return () => container.removeEventListener("contextmenu", handleContextMenu);
   }, [editor]);
 
-  // Close on outside click or escape
   useEffect(() => {
     if (!menu) return;
-
     const handleClose = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenu(null);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(null);
     };
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenu(null);
     };
-
     window.addEventListener("mousedown", handleClose);
     window.addEventListener("keydown", handleEsc);
     return () => {
@@ -79,9 +69,7 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
     if (!editor || !menu) return;
     const allShapes = editor.getCurrentPageShapes().filter((s) => s.type !== "arrow");
     const others = allShapes.filter((s) => s.id !== menu.shapeId);
-    for (const other of others) {
-      connectShapes(editor, menu.shapeId, other.id);
-    }
+    for (const other of others) connectShapes(editor, menu.shapeId, other.id);
     close();
   }, [editor, menu, close]);
 
@@ -99,9 +87,7 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
       const bindings = editor.getBindingsFromShape(shape.id, "arrow");
       return bindings.some((b) => b.toId === menu.shapeId);
     });
-    if (arrowsToDelete.length > 0) {
-      editor.deleteShapes(arrowsToDelete.map((a) => a.id));
-    }
+    if (arrowsToDelete.length > 0) editor.deleteShapes(arrowsToDelete.map((a) => a.id));
     close();
   }, [editor, menu, close]);
 
@@ -128,90 +114,90 @@ export const CanvasContextMenu = ({ editor, onDeepDive }: CanvasContextMenuProps
   const handleDeepDive = useCallback(() => {
     if (!editor || !menu || !onDeepDive) return;
     const shape = editor.getShape(menu.shapeId);
-    if (shape && shape.type === INTEL_NODE_TYPE) {
-      onDeepDive(shape as IntelNodeShape);
-    }
+    if (shape && shape.type === INTEL_NODE_TYPE) onDeepDive(shape as IntelNodeShape);
     close();
   }, [editor, menu, onDeepDive, close]);
 
   const isIntelNode = menu && editor ? editor.getShape(menu.shapeId)?.type === INTEL_NODE_TYPE : false;
   const selectedCount = editor?.getSelectedShapes().length ?? 0;
 
+  type MenuItem =
+    | { kind: "section"; section: string }
+    | { kind: "divider" }
+    | { kind: "item"; icon: React.ElementType; label: string; onClick: () => void; variant?: "destructive" | "muted"; accent?: boolean };
+
+  const menuItems: MenuItem[] = [
+    { kind: "section", section: "Connectors" },
+    { kind: "item", icon: Link, label: "Connect to all", onClick: handleConnectToAll },
+    ...(selectedCount >= 2
+      ? [{ kind: "item" as const, icon: ArrowRightLeft, label: `Connect ${selectedCount} selected`, onClick: handleConnectToSelected }]
+      : []),
+    { kind: "item", icon: Unlink, label: "Remove connections", onClick: handleUnlink, variant: "muted" },
+    { kind: "divider" },
+    { kind: "section", section: "Actions" },
+    ...(isIntelNode && onDeepDive ? [{ kind: "item" as const, icon: Eye, label: "Deep dive", onClick: handleDeepDive, accent: true }] : []),
+    { kind: "item", icon: Copy, label: "Duplicate", onClick: handleDuplicate },
+    { kind: "item", icon: Layers, label: "Bring to front", onClick: handleBringToFront },
+    { kind: "item", icon: Trash2, label: "Delete", onClick: handleDelete, variant: "destructive" },
+  ];
+
   return (
     <AnimatePresence>
       {menu && (
         <motion.div
           ref={menuRef}
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.92 }}
-          transition={{ duration: 0.12 }}
-          className="fixed z-[100] min-w-[180px] rounded-xl bg-card border border-border shadow-lg py-1.5 overflow-hidden"
+          initial={{ opacity: 0, scale: 0.88, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.92, y: -4 }}
+          transition={{ type: "spring", damping: 24, stiffness: 400 }}
+          className="fixed z-[100] min-w-[200px] rounded-2xl bg-card/95 backdrop-blur-xl border border-border shadow-xl shadow-black/[0.06] py-2 overflow-hidden"
           style={{ left: menu.x, top: menu.y }}
         >
-          {/* Connectors section */}
-          <div className="px-2 pt-1 pb-1">
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2">
-              Connectors
-            </span>
-          </div>
+          {menuItems.map((item, i) => {
+            if (item.kind === "divider") return <div key={i} className="my-1.5 mx-3 h-px bg-border" />;
+            if (item.kind === "section") {
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                  className="px-4 pt-1.5 pb-1"
+                >
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {item.section}
+                  </span>
+                </motion.div>
+              );
+            }
 
-          <MenuItem icon={Link} label="Connect to all" onClick={handleConnectToAll} />
-          {selectedCount >= 2 && (
-            <MenuItem icon={ArrowRightLeft} label={`Connect ${selectedCount} selected`} onClick={handleConnectToSelected} />
-          )}
-          <MenuItem icon={Unlink} label="Remove connections" onClick={handleUnlink} variant="muted" />
+            const Icon = item.icon;
+            const colorClass =
+              item.variant === "destructive"
+                ? "text-destructive hover:bg-destructive/5"
+                : item.variant === "muted"
+                  ? "text-muted-foreground hover:bg-muted"
+                  : item.accent
+                    ? "text-primary hover:bg-primary/5"
+                    : "text-foreground hover:bg-muted";
 
-          <div className="my-1.5 mx-2 h-px bg-border" />
-
-          {/* Actions section */}
-          <div className="px-2 pt-1 pb-1">
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2">
-              Actions
-            </span>
-          </div>
-
-          {isIntelNode && onDeepDive && (
-            <MenuItem icon={Eye} label="Deep dive" onClick={handleDeepDive} accent />
-          )}
-          <MenuItem icon={Copy} label="Duplicate" onClick={handleDuplicate} />
-          <MenuItem icon={Layers} label="Bring to front" onClick={handleBringToFront} />
-          <MenuItem icon={Trash2} label="Delete" onClick={handleDelete} variant="destructive" />
+            return (
+              <motion.button
+                key={i}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.03 + i * 0.03, type: "spring", stiffness: 400, damping: 28 }}
+                whileHover={{ x: 2 }}
+                onClick={item.onClick}
+                className={`w-full flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium transition-colors ${colorClass}`}
+              >
+                <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                {item.label}
+              </motion.button>
+            );
+          })}
         </motion.div>
       )}
     </AnimatePresence>
   );
 };
-
-function MenuItem({
-  icon: Icon,
-  label,
-  onClick,
-  variant,
-  accent,
-}: {
-  icon: React.ElementType;
-  label: string;
-  onClick: () => void;
-  variant?: "destructive" | "muted";
-  accent?: boolean;
-}) {
-  const colorClass =
-    variant === "destructive"
-      ? "text-destructive hover:bg-destructive/5"
-      : variant === "muted"
-        ? "text-muted-foreground hover:bg-muted"
-        : accent
-          ? "text-primary hover:bg-primary/5"
-          : "text-foreground hover:bg-muted";
-
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-4 py-2 text-[12px] font-medium transition-colors ${colorClass}`}
-    >
-      <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
-      {label}
-    </button>
-  );
-}

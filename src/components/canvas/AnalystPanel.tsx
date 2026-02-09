@@ -1,21 +1,17 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Brain, Search, Shield, Globe, AlertTriangle, Sparkles, Mail, User, Hash, AtSign, ExternalLink } from "lucide-react";
+import { X, Brain, Search, Shield, Globe, AlertTriangle, Sparkles, Mail, User, Hash, AtSign, ExternalLink, Activity } from "lucide-react";
 import { Editor } from "tldraw";
-import { useState, forwardRef } from "react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { DraggableResultCard, type ScanResult } from "./DraggableResultCard";
+import { StatusCard } from "./StatusCard";
+import { toast } from "sonner";
 
 interface AnalystPanelProps {
   isOpen: boolean;
   onClose: () => void;
   editor: Editor | null;
   selectedCount: number;
-}
-
-interface ScanResult {
-  type: string;
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  confidence: "high" | "medium" | "low";
 }
 
 function detectEntityType(query: string): string {
@@ -31,56 +27,68 @@ function detectEntityType(query: string): string {
   return "general";
 }
 
-function generateMockResults(query: string, entityType: string): ScanResult[] {
-  const q = query.trim();
-  switch (entityType) {
-    case "email": {
-      const domain = q.split("@")[1] || "unknown.com";
-      const user = q.split("@")[0] || "user";
-      return [
-        { type: "email", icon: <Mail className="w-3.5 h-3.5" />, label: "Email Identified", value: q, confidence: "high" },
-        { type: "domain", icon: <Globe className="w-3.5 h-3.5" />, label: "Domain", value: domain, confidence: "high" },
-        { type: "username", icon: <User className="w-3.5 h-3.5" />, label: "Possible Username", value: user, confidence: "medium" },
-        { type: "breach", icon: <AlertTriangle className="w-3.5 h-3.5" />, label: "Breach Check", value: "Requires API connection", confidence: "low" },
-        { type: "social", icon: <AtSign className="w-3.5 h-3.5" />, label: "Social Profiles", value: `Searching for ${user}...`, confidence: "medium" },
-      ];
-    }
-    case "ip":
-      return [
-        { type: "ip", icon: <Globe className="w-3.5 h-3.5" />, label: "IP Address", value: q, confidence: "high" },
-        { type: "geo", icon: <Globe className="w-3.5 h-3.5" />, label: "Geolocation", value: "Requires API connection", confidence: "low" },
-        { type: "asn", icon: <Hash className="w-3.5 h-3.5" />, label: "ASN Lookup", value: "Pending backend", confidence: "low" },
-      ];
-    case "username":
-      return [
-        { type: "username", icon: <User className="w-3.5 h-3.5" />, label: "Username", value: q.replace("@", ""), confidence: "high" },
-        { type: "social", icon: <AtSign className="w-3.5 h-3.5" />, label: "Social Scan", value: `Checking platforms for ${q}`, confidence: "medium" },
-        { type: "profile", icon: <ExternalLink className="w-3.5 h-3.5" />, label: "Profile Links", value: "Requires Sherlock integration", confidence: "low" },
-      ];
-    default:
-      return [
-        { type: "query", icon: <Search className="w-3.5 h-3.5" />, label: "Search Query", value: q, confidence: "high" },
-        { type: "entities", icon: <User className="w-3.5 h-3.5" />, label: "Entity Extraction", value: "Requires AI backend", confidence: "low" },
-      ];
-  }
-}
+const iconMap: Record<string, React.ReactNode> = {
+  email: <Mail className="w-3.5 h-3.5" />,
+  domain: <Globe className="w-3.5 h-3.5" />,
+  username: <User className="w-3.5 h-3.5" />,
+  breach: <AlertTriangle className="w-3.5 h-3.5" />,
+  social: <AtSign className="w-3.5 h-3.5" />,
+  ip: <Globe className="w-3.5 h-3.5" />,
+  geo: <Globe className="w-3.5 h-3.5" />,
+  asn: <Hash className="w-3.5 h-3.5" />,
+  profile: <ExternalLink className="w-3.5 h-3.5" />,
+  query: <Search className="w-3.5 h-3.5" />,
+  entities: <User className="w-3.5 h-3.5" />,
+  raw: <Brain className="w-3.5 h-3.5" />,
+  risk: <Activity className="w-3.5 h-3.5" />,
+};
 
 export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: AnalystPanelProps) => {
   const [query, setQuery] = useState("");
   const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<ScanResult[]>([]);
   const [scannedQuery, setScannedQuery] = useState("");
+  const [summary, setSummary] = useState("");
+  const [riskLevel, setRiskLevel] = useState("");
 
-  const handleScan = () => {
+  const handleScan = async () => {
     if (!query.trim() || scanning) return;
     setScanning(true);
     setResults([]);
+    setSummary("");
+    setRiskLevel("");
+
     const entityType = detectEntityType(query);
-    setTimeout(() => {
-      setResults(generateMockResults(query, entityType));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("osint-scan", {
+        body: { query: query.trim(), entityType },
+      });
+
+      if (error) throw error;
+
+      if (data?.results && Array.isArray(data.results)) {
+        const mapped: ScanResult[] = data.results.map((r: any) => ({
+          type: r.type || "general",
+          icon: iconMap[r.type] || <Search className="w-3.5 h-3.5" />,
+          label: r.label || r.type,
+          value: r.value || "",
+          confidence: r.confidence || "medium",
+        }));
+        setResults(mapped);
+        setSummary(data.summary || "");
+        setRiskLevel(data.riskLevel || "low");
+      } else if (data?.error) {
+        toast.error(data.error);
+      }
+
       setScannedQuery(query);
+    } catch (err: any) {
+      console.error("Scan failed:", err);
+      toast.error(err.message || "Scan failed. Check your connection.");
+    } finally {
       setScanning(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -127,7 +135,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
               {scanning ? (
                 <>
                   <div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  Scanning...
+                  Scanning with AI...
                 </>
               ) : (
                 <>
@@ -142,24 +150,37 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
           <div className="p-4 space-y-3 flex-1 overflow-y-auto">
             {results.length > 0 ? (
               <>
-                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
-                  Scan Results — <span className="text-primary">{scannedQuery}</span>
+                <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">
+                  AI Scan — <span className="text-primary">{scannedQuery}</span>
+                </div>
+                {summary && (
+                  <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 mb-3">
+                    <p className="text-xs font-mono text-foreground">{summary}</p>
+                    {riskLevel && (
+                      <span className={`mt-2 inline-block text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
+                        riskLevel === "critical" ? "bg-destructive/20 text-destructive" :
+                        riskLevel === "high" ? "bg-destructive/15 text-destructive" :
+                        riskLevel === "medium" ? "bg-amber-glow/15 text-amber-glow" :
+                        "bg-accent/15 text-accent"
+                      }`}>
+                        Risk: {riskLevel}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="text-[10px] font-mono text-muted-foreground mb-2">
+                  ↕ Drag results onto the canvas to create intelligence nodes
                 </div>
                 {results.map((result, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: i * 0.08 }}
                   >
-                    <ResultCard result={result} />
+                    <DraggableResultCard result={result} />
                   </motion.div>
                 ))}
-                <div className="mt-4 p-3 rounded-lg border border-border bg-secondary/50">
-                  <p className="text-[10px] font-mono text-muted-foreground">
-                    ⚡ Local analysis complete. Enable Cloud backend for live OSINT queries (WHOIS, breach checks, social scanning).
-                  </p>
-                </div>
               </>
             ) : (
               <>
@@ -178,6 +199,9 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                     {["Trace IP", "Find Emails", "WHOIS Lookup", "Social Scan"].map((action) => (
                       <button
                         key={action}
+                        onClick={() => {
+                          setQuery(action);
+                        }}
                         className="px-3 py-2.5 bg-secondary hover:bg-secondary/80 border border-border rounded-lg text-xs font-mono text-secondary-foreground hover:text-foreground transition-all text-left"
                       >
                         {action}
@@ -191,49 +215,5 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
         </motion.div>
       )}
     </AnimatePresence>
-  );
-};
-
-const ResultCard = ({ result }: { result: ScanResult }) => {
-  const confColors = {
-    high: "text-accent",
-    medium: "text-primary",
-    low: "text-muted-foreground",
-  };
-
-  return (
-    <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-secondary/50 hover:bg-secondary/80 transition-all">
-      <div className="mt-0.5 text-primary">{result.icon}</div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{result.label}</div>
-        <div className="text-xs font-mono text-foreground truncate mt-0.5">{result.value}</div>
-      </div>
-      <span className={`text-[9px] font-mono uppercase ${confColors[result.confidence]}`}>
-        {result.confidence}
-      </span>
-    </div>
-  );
-};
-
-const StatusCard = ({ icon, label, value, color }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: "cyan" | "emerald" | "amber";
-}) => {
-  const colorMap = {
-    cyan: "text-primary border-primary/20 bg-primary/5",
-    emerald: "text-accent border-accent/20 bg-accent/5",
-    amber: "text-amber-glow border-amber-glow/20 bg-amber-glow/5",
-  };
-
-  return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg border ${colorMap[color]} transition-all`}>
-      <div className="opacity-70">{icon}</div>
-      <div className="flex-1">
-        <div className="text-[10px] font-mono uppercase tracking-wider opacity-60">{label}</div>
-        <div className="text-xs font-semibold">{value}</div>
-      </div>
-    </div>
   );
 };

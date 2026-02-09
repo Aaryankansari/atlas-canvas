@@ -2,3 +2,6 @@ project_id = "lyhaavewynlataddfzmu"
 
 [functions.osint-scan]
 verify_jwt = false
+
+[functions.deep-search]
+verify_jwt = false

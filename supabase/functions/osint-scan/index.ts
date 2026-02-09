@@ -1,12 +1,184 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+// ── Free public OSINT data sources ──────────────────────────────────
+
+async function fetchJSON(url: string, timeout = 6000): Promise<any> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// IP intelligence via ip-api.com (free, no key)
+async function gatherIPIntel(ip: string) {
+  const data = await fetchJSON(
+    `http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,asname,reverse,mobile,proxy,hosting,query`
+  );
+  if (!data || data.status === "fail") return null;
+  return data;
+}
+
+// Email validation via emailrep.io (free tier) and disify
+async function gatherEmailIntel(email: string) {
+  const [disify, mailcheck] = await Promise.all([
+    fetchJSON(`https://disify.com/api/email/${email}`),
+    fetchJSON(`https://api.eva.pingutil.com/email?email=${email}`),
+  ]);
+  return { disify, mailcheck };
+}
+
+// Domain/DNS intel via free APIs
+async function gatherDomainIntel(domain: string) {
+  const [rdap, dns] = await Promise.all([
+    fetchJSON(`https://rdap.org/domain/${domain}`),
+    fetchJSON(`https://dns.google/resolve?name=${domain}&type=A`),
+  ]);
+  return { rdap, dns };
+}
+
+// Username search via public profile checks
+async function gatherUsernameIntel(username: string) {
+  const platforms = [
+    { name: "GitHub", url: `https://api.github.com/users/${username}`, key: "login" },
+  ];
+  
+  const results: Array<{ platform: string; found: boolean; data?: any }> = [];
+  
+  await Promise.all(
+    platforms.map(async (p) => {
+      try {
+        const res = await fetch(p.url, { 
+          signal: AbortSignal.timeout(5000),
+          headers: { 'User-Agent': 'ICARUS-OSINT/1.0' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          results.push({ platform: p.name, found: true, data });
+        } else {
+          results.push({ platform: p.name, found: false });
+        }
+      } catch {
+        results.push({ platform: p.name, found: false });
+      }
+    })
+  );
+  
+  return results;
+}
+
+// ── AI analysis with enriched context ────────────────────────────────
+
+async function runAIAnalysis(
+  query: string,
+  entityType: string,
+  realIntel: any,
+  apiKey: string
+) {
+  const intelContext = JSON.stringify(realIntel, null, 2);
+
+  const systemPrompt = `You are an expert OSINT (Open Source Intelligence) analyst with deep expertise in cyber threat intelligence, digital forensics, and investigative research.
+
+You have been given REAL intelligence data gathered from multiple sources. Use this data to produce an accurate, actionable intelligence report.
+
+CRITICAL RULES:
+- Base your analysis on the REAL DATA provided — do not fabricate findings
+- Clearly distinguish between confirmed facts (from real data) and analytical assessments
+- Each finding must have: type, label, value, confidence (high/medium/low)
+- Provide specific, actionable recommendations
+- Assess risk based on actual indicators found
+- For emails: analyze domain reputation, disposability, breach exposure, linked accounts
+- For IPs: analyze geolocation, hosting provider, proxy/VPN detection, threat reputation
+- For usernames: analyze platform presence, account age, activity patterns, linked identities
+- For BTC wallets: analyze wallet type, transaction patterns, known associations
+- For domains: analyze registration, DNS, hosting, SSL, reputation
+
+REAL INTELLIGENCE DATA:
+${intelContext}
+
+Return ONLY valid JSON. No markdown fences. Exact structure:
+{
+  "entityType": "${entityType}",
+  "summary": "Concise intelligence summary based on real findings",
+  "aiBio": "2-3 sentence investigator's brief — who/what is this entity and threat assessment",
+  "results": [
+    { "type": "category", "label": "Finding Name", "value": "Detail from real data", "confidence": "high|medium|low" }
+  ],
+  "riskLevel": "low|medium|high|critical",
+  "recommendations": ["specific actionable step 1", "step 2"],
+  "categories": {
+    "aliases": ["confirmed alternate identities"],
+    "locations": ["geo locations from real data"],
+    "financials": ["financial indicators found"],
+    "socials": ["confirmed social profiles"]
+  },
+  "metadata": {
+    "emails": ["email addresses found"],
+    "ips": ["IP addresses found"],
+    "btcWallets": ["wallet addresses found"],
+    "usernames": ["usernames/handles found"],
+    "domains": ["domains found"]
+  },
+  "evidenceLinks": ["real source URLs"],
+  "rawIntel": {
+    "sourcesQueried": ["list of data sources checked"],
+    "dataQuality": "assessment of data completeness"
+  }
+}`;
+
+  const response = await fetch(
+    "https://ai.gateway.lovable.dev/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `Produce a structured OSINT intelligence report for this ${entityType} entity: "${query}"`,
+          },
+        ],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const status = response.status;
+    if (status === 429) throw new Error("Rate limit exceeded. Please try again in a moment.");
+    if (status === 402) throw new Error("AI credits depleted. Please add credits in Settings.");
+    throw new Error(`AI analysis failed (${status})`);
+  }
+
+  const aiData = await response.json();
+  const content = aiData.choices?.[0]?.message?.content || "";
+
+  try {
+    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch {
+    console.error("Failed to parse AI response:", content.slice(0, 200));
+    return null;
+  }
+}
+
+// ── Main handler ─────────────────────────────────────────────────────
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -29,130 +201,111 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are an expert OSINT (Open Source Intelligence) analyst. Given a query entity, produce a structured intelligence report.
+    console.log(`[osint-scan] Scanning ${entityType}: ${query}`);
 
-RULES:
-- Analyze the entity type and provide relevant intelligence findings
-- Each finding must have: type, label, value, confidence (high/medium/low)
-- For emails: extract domain, possible usernames, check common breach patterns, social media associations
-- For IPs: identify likely ISP, geolocation region, reputation indicators
-- For usernames: identify platforms where handle is commonly found, associated personas
-- For BTC addresses: identify wallet type, transaction pattern indicators
-- For general queries: extract entities, relationships, key intelligence
+    // ── Step 1: Gather real intelligence from public APIs ──
+    const realIntel: Record<string, any> = { sourcesQueried: [] };
 
-IMPORTANT: Return ONLY valid JSON. No markdown. No explanation outside JSON.
-
-Return a JSON object with this exact structure:
-{
-  "entityType": "email|ip|username|btc|general",
-  "summary": "One-line intelligence summary",
-  "aiBio": "A 2-sentence investigator's brief summarizing who/what this entity is and why it matters.",
-  "results": [
-    {
-      "type": "category_name",
-      "label": "Human-readable label",
-      "value": "The finding detail",
-      "confidence": "high|medium|low"
+    if (entityType === "ip") {
+      const ipData = await gatherIPIntel(query);
+      if (ipData) {
+        realIntel.ipGeolocation = ipData;
+        realIntel.sourcesQueried.push("ip-api.com");
+      }
     }
-  ],
-  "riskLevel": "low|medium|high|critical",
-  "recommendations": ["actionable step 1", "actionable step 2"],
-  "categories": {
-    "aliases": ["known aliases or alternate names"],
-    "locations": ["associated geographic locations"],
-    "financials": ["financial indicators, wallets, transactions"],
-    "socials": ["social media profiles, handles, platforms"]
-  },
-  "metadata": {
-    "emails": ["any email addresses found"],
-    "ips": ["any IP addresses found"],
-    "btcWallets": ["any BTC wallet addresses found"],
-    "usernames": ["any usernames/handles found"],
-    "domains": ["any domains found"]
-  },
-  "evidenceLinks": ["https://example.com/source1"]
-}`;
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `Analyze this ${entityType} entity for OSINT intelligence: "${query}"`,
-            },
-          ],
-        }),
+    if (entityType === "email") {
+      const emailData = await gatherEmailIntel(query);
+      if (emailData.disify) {
+        realIntel.emailValidation = emailData.disify;
+        realIntel.sourcesQueried.push("disify.com");
       }
-    );
+      if (emailData.mailcheck) {
+        realIntel.emailDeliverability = emailData.mailcheck;
+        realIntel.sourcesQueried.push("eva.pingutil.com");
+      }
+      // Also check the domain part
+      const domain = query.split("@")[1];
+      if (domain) {
+        const domainData = await gatherDomainIntel(domain);
+        if (domainData.dns) {
+          realIntel.emailDomainDNS = domainData.dns;
+          realIntel.sourcesQueried.push("dns.google");
+        }
+      }
+    }
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    if (entityType === "domain" || entityType === "general") {
+      // Try to extract domain from query
+      const domainMatch = query.match(/(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}/i);
+      if (domainMatch) {
+        const domain = domainMatch[0];
+        const domainData = await gatherDomainIntel(domain);
+        if (domainData.rdap) {
+          realIntel.rdap = domainData.rdap;
+          realIntel.sourcesQueried.push("rdap.org");
+        }
+        if (domainData.dns) {
+          realIntel.dns = domainData.dns;
+          realIntel.sourcesQueried.push("dns.google");
+        }
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits depleted. Please add credits in Settings." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const text = await response.text();
-      console.error("AI gateway error:", response.status, text);
+    }
+
+    if (entityType === "username") {
+      const usernameData = await gatherUsernameIntel(query);
+      realIntel.platformChecks = usernameData;
+      realIntel.sourcesQueried.push("github.com");
+    }
+
+    console.log(`[osint-scan] Real intel sources: ${realIntel.sourcesQueried.join(", ") || "none"}`);
+
+    // ── Step 2: AI-powered analysis with real data context ──
+    const parsed = await runAIAnalysis(query, entityType, realIntel, LOVABLE_API_KEY);
+
+    if (!parsed) {
       return new Response(
-        JSON.stringify({ error: "AI analysis failed" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          entityType,
+          summary: "Partial analysis — real data gathered but AI parsing failed",
+          aiBio: "",
+          results: Object.entries(realIntel)
+            .filter(([k]) => k !== "sourcesQueried")
+            .map(([k, v]) => ({
+              type: "raw",
+              label: k,
+              value: typeof v === "string" ? v : JSON.stringify(v).slice(0, 300),
+              confidence: "high",
+            })),
+          riskLevel: "low",
+          categories: { aliases: [], locations: [], financials: [], socials: [] },
+          metadata: { emails: [], ips: [], btcWallets: [], usernames: [], domains: [] },
+          evidenceLinks: [],
+          rawIntel: realIntel,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aiData = await response.json();
-    const content = aiData.choices?.[0]?.message?.content || "";
-
-    let parsed;
-    try {
-      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      parsed = JSON.parse(cleaned);
-    } catch {
-      console.error("Failed to parse AI response:", content);
-      parsed = {
-        entityType,
-        summary: "Analysis complete",
-        aiBio: "",
-        results: [
-          { type: "raw", label: "AI Analysis", value: content.slice(0, 500), confidence: "medium" },
-        ],
-        riskLevel: "low",
-        recommendations: [],
-        categories: { aliases: [], locations: [], financials: [], socials: [] },
-        metadata: { emails: [], ips: [], btcWallets: [], usernames: [], domains: [] },
-        evidenceLinks: [],
-      };
-    }
-
-    // Ensure all fields exist
+    // Ensure all fields
     parsed.aiBio = parsed.aiBio || "";
     parsed.categories = parsed.categories || { aliases: [], locations: [], financials: [], socials: [] };
     parsed.metadata = parsed.metadata || { emails: [], ips: [], btcWallets: [], usernames: [], domains: [] };
     parsed.evidenceLinks = parsed.evidenceLinks || [];
+    parsed.rawIntel = { ...realIntel, ...parsed.rawIntel };
+
+    console.log(`[osint-scan] Analysis complete. Risk: ${parsed.riskLevel}, Findings: ${parsed.results?.length || 0}`);
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("osint-scan error:", e);
+    console.error("[osint-scan] error:", e);
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    const status = msg.includes("Rate limit") ? 429 : msg.includes("credits") ? 402 : 500;
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: msg }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

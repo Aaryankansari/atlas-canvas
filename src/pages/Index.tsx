@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from "react";
-import { Tldraw, Editor, createShapeId } from "tldraw";
+import { useState, useCallback, useRef, useMemo } from "react";
+import { Tldraw, Editor, createShapeId, TLComponents } from "tldraw";
 import "tldraw/tldraw.css";
 import { FloatingToolbar } from "@/components/canvas/FloatingToolbar";
 import { AnalystPanel } from "@/components/canvas/AnalystPanel";
@@ -11,6 +11,21 @@ import { useAutoLinker } from "@/components/canvas/intel-node/useAutoLinker";
 import { IntelNodeShape, INTEL_NODE_TYPE, IntelNodeProps } from "@/components/canvas/intel-node/types";
 
 const customShapeUtils = [IntelNodeShapeUtil];
+
+// Hide tldraw's built-in UI — we use our own toolbar, header, and panels
+const hiddenComponents: TLComponents = {
+  Toolbar: null,
+  StylePanel: null,
+  PageMenu: null,
+  NavigationPanel: null,
+  MainMenu: null,
+  KeyboardShortcutsDialog: null,
+  QuickActions: null,
+  HelperButtons: null,
+  MenuPanel: null,
+  TopPanel: null,
+  SharePanel: null,
+};
 
 const Index = () => {
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -131,7 +146,7 @@ const Index = () => {
 
         {/* tldraw canvas */}
         <div className="absolute inset-0 z-0">
-          <Tldraw onMount={handleMount} inferDarkMode shapeUtils={customShapeUtils} />
+          <Tldraw onMount={handleMount} inferDarkMode shapeUtils={customShapeUtils} components={hiddenComponents} />
         </div>
 
         {/* Floating toolbar */}

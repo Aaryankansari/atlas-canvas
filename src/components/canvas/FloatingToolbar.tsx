@@ -1,9 +1,11 @@
 import { Editor } from "tldraw";
 import { MousePointer2, Square, Type, Minus, StickyNote, Pencil, Search, Network } from "lucide-react";
 import { motion } from "framer-motion";
+import { connectAllSelected } from "./connector/useConnector";
 
 interface FloatingToolbarProps {
   editor: Editor | null;
+  selectedCount: number;
 }
 
 const tools = [
@@ -15,10 +17,15 @@ const tools = [
   { id: "note", icon: StickyNote, label: "Note" },
 ];
 
-export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
+export const FloatingToolbar = ({ editor, selectedCount }: FloatingToolbarProps) => {
   const handleTool = (toolId: string) => {
     if (!editor) return;
     editor.setCurrentTool(toolId);
+  };
+
+  const handleConnect = () => {
+    if (!editor || selectedCount < 2) return;
+    connectAllSelected(editor);
   };
 
   return (
@@ -53,9 +60,13 @@ export const FloatingToolbar = ({ editor }: FloatingToolbarProps) => {
           <Search className="w-[17px] h-[17px]" strokeWidth={1.5} />
         </button>
         <button
-          onClick={() => handleTool("select")}
-          title="Link Nodes"
-          className="w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 text-primary/60 hover:text-primary hover:bg-primary/5 active:scale-95"
+          onClick={handleConnect}
+          title={selectedCount >= 2 ? "Connect selected shapes" : "Select 2+ shapes to connect"}
+          className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 ${
+            selectedCount >= 2
+              ? "text-primary hover:bg-primary/5"
+              : "text-muted-foreground/40 cursor-not-allowed"
+          }`}
         >
           <Network className="w-[17px] h-[17px]" strokeWidth={1.5} />
         </button>

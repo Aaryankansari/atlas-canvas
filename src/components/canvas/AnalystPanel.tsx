@@ -137,21 +137,21 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ x: "100%", opacity: 0 }}
+          initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: "100%", opacity: 0 }}
+          exit={{ x: 20, opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 280 }}
-          className="absolute right-3 top-3 bottom-3 w-[360px] z-40 flex flex-col rounded-2xl overflow-hidden bg-card/90 backdrop-blur-xl border border-border shadow-xl"
+          className="absolute right-3 top-3 bottom-3 w-[360px] z-40 flex flex-col rounded-2xl overflow-hidden bg-card border border-border shadow-xl"
         >
           {/* Header */}
           <div className="p-4 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary/10">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center bg-primary/10">
                 <Brain className="w-3.5 h-3.5 text-primary" />
               </div>
               <h2 className="text-[13px] font-semibold text-foreground tracking-tight">AI Analyst</h2>
             </div>
-            <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+            <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -166,13 +166,13 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
                 placeholder="Email, IP, username, wallet..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground bg-secondary border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all font-mono"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all font-mono"
               />
             </div>
             <button
               onClick={handleScan}
               disabled={!query.trim() || scanning}
-              className="mt-3 w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="mt-3 w-full py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:opacity-90"
             >
               {scanning ? (
                 <>
@@ -193,7 +193,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
             {results.length > 0 ? (
               <>
                 <div className="text-[11px] font-mono text-muted-foreground">
-                  Results for <span className="text-primary">{scannedQuery}</span>
+                  Results for <span className="text-primary font-semibold">{scannedQuery}</span>
                 </div>
 
                 {summary && (
@@ -229,7 +229,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                   </div>
                 )}
 
-                <div className="text-[10px] text-muted-foreground/50">Drag items onto the canvas</div>
+                <div className="text-[10px] text-muted-foreground/60">Drag items onto the canvas</div>
 
                 {results.map((result, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
@@ -251,7 +251,7 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
                       <button
                         key={action}
                         onClick={() => setQuery(action)}
-                        className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left bg-secondary border border-border text-foreground/60 hover:bg-secondary/80 hover:text-foreground"
+                        className="px-3 py-2.5 rounded-xl text-[11px] transition-all duration-200 text-left bg-muted border border-border text-foreground/60 hover:bg-muted/80 hover:text-foreground"
                       >
                         {action}
                       </button>

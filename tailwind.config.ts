@@ -70,6 +70,9 @@ export default {
         amber: {
           glow: "hsl(var(--amber-glow))",
         },
+        warm: {
+          gray: "hsl(0, 0%, 93%)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

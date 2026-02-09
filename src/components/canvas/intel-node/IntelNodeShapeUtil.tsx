@@ -48,19 +48,8 @@ export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
       riskLevel: "low",
       summary: "",
       confidence: "medium",
-      metadata: {
-        emails: [],
-        ips: [],
-        btcWallets: [],
-        usernames: [],
-        domains: [],
-      },
-      categories: {
-        aliases: [],
-        locations: [],
-        financials: [],
-        socials: [],
-      },
+      metadata: { emails: [], ips: [], btcWallets: [], usernames: [], domains: [] },
+      categories: { aliases: [], locations: [], financials: [], socials: [] },
       evidenceLinks: [],
       aiBio: "",
       rawResults: [],
@@ -90,10 +79,10 @@ export class IntelNodeShapeUtil extends BaseBoxShapeUtil<IntelNodeShape> {
       <rect
         width={shape.props.w}
         height={shape.props.h}
-        rx={16}
-        ry={16}
+        rx={20}
+        ry={20}
         fill="none"
-        stroke="hsl(215, 90%, 52%)"
+        stroke="hsl(166, 72%, 47%)"
         strokeWidth={1.5}
         strokeOpacity={0.5}
       />

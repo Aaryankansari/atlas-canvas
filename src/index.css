@@ -6,51 +6,51 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%;
-    --foreground: 220 15% 15%;
+    --background: 0 0% 93%;
+    --foreground: 0 0% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
+    --card-foreground: 0 0% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
+    --popover-foreground: 0 0% 15%;
 
-    --primary: 215 90% 52%;
+    --primary: 166 72% 47%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 94%;
-    --secondary-foreground: 220 15% 30%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 30%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 8% 50%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 50%;
 
-    --accent: 215 90% 52%;
+    --accent: 166 72% 47%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 90%;
-    --input: 220 13% 90%;
-    --ring: 215 90% 52%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 166 72% 47%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 15% 30%;
-    --sidebar-primary: 215 90% 52%;
+    --sidebar-foreground: 0 0% 30%;
+    --sidebar-primary: 166 72% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 15% 30%;
-    --sidebar-border: 220 13% 90%;
-    --sidebar-ring: 215 90% 52%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 30%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 166 72% 47%;
 
     /* Custom tokens */
-    --cyan-glow: 215 90% 52%;
+    --cyan-glow: 166 72% 47%;
     --emerald-glow: 152 69% 45%;
     --amber-glow: 38 92% 50%;
     --surface-glass: 0 0% 100%;
-    --grid-line: 220 13% 92%;
+    --grid-line: 0 0% 88%;
 
     font-family: 'Inter', system-ui, sans-serif;
   }
@@ -88,25 +88,22 @@
   }
 
   .glass-panel {
-    background: hsl(var(--surface-glass) / 0.8);
-    backdrop-filter: blur(24px) saturate(180%);
+    background: hsl(var(--surface-glass) / 0.9);
+    backdrop-filter: blur(24px);
     border: 1px solid hsl(var(--border));
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.03);
   }
 
   .glow-cyan {
-    box-shadow: 0 0 20px hsl(var(--cyan-glow) / 0.1),
-                0 0 40px hsl(var(--cyan-glow) / 0.03);
+    box-shadow: none;
   }
 
   .glow-cyan-strong {
-    box-shadow: 0 0 15px hsl(var(--cyan-glow) / 0.15),
-                0 0 30px hsl(var(--cyan-glow) / 0.06);
+    box-shadow: none;
   }
 
   .glow-emerald {
-    box-shadow: 0 0 20px hsl(var(--emerald-glow) / 0.1),
-                0 0 40px hsl(var(--emerald-glow) / 0.03);
+    box-shadow: none;
   }
 
   .text-glow-cyan {
@@ -114,8 +111,10 @@
   }
 
   .grid-bg {
-    background-image: radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-image:
+      linear-gradient(hsl(var(--grid-line)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-line)) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 
   .scanline {
@@ -123,12 +122,12 @@
   }
 }
 
-/* tldraw theme overrides — light */
+/* tldraw theme overrides — warm light */
 .tl-container {
-  --color-background: hsl(0, 0%, 97%) !important;
-  --color-text: hsl(220, 15%, 15%) !important;
+  --color-background: hsl(0, 0%, 93%) !important;
+  --color-text: hsl(0, 0%, 15%) !important;
 }
 
 .tl-background {
-  background-color: hsl(0, 0%, 97%) !important;
+  background-color: hsl(0, 0%, 93%) !important;
 }

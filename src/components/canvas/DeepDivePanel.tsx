@@ -24,7 +24,7 @@ const CategorySection = ({ icon, title, items }: { icon: React.ReactNode; title:
       </div>
       <div className="flex flex-wrap gap-1.5">
         {items.map((item, i) => (
-          <span key={i} className="text-[11px] px-2.5 py-1 rounded-lg bg-secondary border border-border text-foreground/75">
+          <span key={i} className="text-[11px] px-2.5 py-1 rounded-lg bg-muted border border-border text-foreground/75">
             {item}
           </span>
         ))}
@@ -44,16 +44,16 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
     <AnimatePresence>
       {node && (
         <motion.div
-          initial={{ x: "100%", opacity: 0 }}
+          initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: "100%", opacity: 0 }}
+          exit={{ x: 20, opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 280 }}
-          className="absolute right-3 top-3 bottom-3 w-[380px] z-50 flex flex-col rounded-2xl overflow-hidden bg-card/90 backdrop-blur-xl border border-border shadow-xl"
+          className="absolute right-3 top-3 bottom-3 w-[380px] z-50 flex flex-col rounded-2xl overflow-hidden bg-card border border-border shadow-xl"
         >
           {/* Header */}
           <div className="p-5 flex items-center justify-between border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-secondary">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-muted">
                 {icon}
               </div>
               <div>
@@ -61,7 +61,7 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
                 <span className="text-[11px] capitalize text-muted-foreground">{props.entityType}</span>
               </div>
             </div>
-            <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+            <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -71,7 +71,7 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full" style={{ background: risk.dot }} />
               <span className="text-[11px] font-medium text-muted-foreground">Risk Level</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-md ml-auto" style={{ background: risk.bg, color: risk.text }}>
+              <span className="text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-lg ml-auto" style={{ background: risk.bg, color: risk.text }}>
                 {props.riskLevel}
               </span>
             </div>
@@ -112,9 +112,9 @@ export const DeepDivePanel = ({ node, onClose }: DeepDivePanelProps) => {
             {props.rawResults && props.rawResults.length > 0 && (
               <div className="space-y-2.5">
                 <span className="text-[11px] font-medium text-muted-foreground">All Findings · {props.rawResults.length}</span>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {props.rawResults.map((r: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-secondary/50">
+                    <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/50 border border-border">
                       <div className="flex-1 min-w-0">
                         <div className="text-[10px] uppercase text-muted-foreground" style={{ letterSpacing: "0.04em" }}>{r.label}</div>
                         <div className="text-[11px] truncate mt-0.5 text-foreground/70">{r.value}</div>

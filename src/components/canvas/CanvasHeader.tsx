@@ -1,12 +1,25 @@
-import { Radar, PanelRightOpen, PanelRightClose, Download, Layers } from "lucide-react";
+import { useState } from "react";
+import { Radar, PanelRightOpen, PanelRightClose, Download, Layers, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
+import { ExportMenu } from "./ExportMenu";
 
 interface CanvasHeaderProps {
   onToggleAnalyst: () => void;
   analystOpen: boolean;
+  onSmartLayout: () => void;
+  onExportPng: () => void;
+  onExportSvg: () => void;
 }
 
-export const CanvasHeader = ({ onToggleAnalyst, analystOpen }: CanvasHeaderProps) => {
+export const CanvasHeader = ({
+  onToggleAnalyst,
+  analystOpen,
+  onSmartLayout,
+  onExportPng,
+  onExportSvg,
+}: CanvasHeaderProps) => {
+  const [exportOpen, setExportOpen] = useState(false);
+
   return (
     <motion.header
       initial={{ y: -48, opacity: 0 }}
@@ -42,10 +55,22 @@ export const CanvasHeader = ({ onToggleAnalyst, analystOpen }: CanvasHeaderProps
         </motion.span>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 relative">
+        <motion.button
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={onSmartLayout}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors duration-200"
+          title="Auto-arrange nodes based on connections"
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          Smart Layout
+        </motion.button>
         {[
           { icon: Layers, label: "Scenes" },
-          { icon: Download, label: "Export" },
         ].map((item, i) => (
           <motion.button
             key={item.label}
@@ -60,6 +85,24 @@ export const CanvasHeader = ({ onToggleAnalyst, analystOpen }: CanvasHeaderProps
             {item.label}
           </motion.button>
         ))}
+        <motion.button
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => setExportOpen(!exportOpen)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors duration-200"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Export
+        </motion.button>
+        <ExportMenu
+          isOpen={exportOpen}
+          onClose={() => setExportOpen(false)}
+          onExportPng={onExportPng}
+          onExportSvg={onExportSvg}
+        />
         <div className="h-4 w-px mx-1 bg-border" />
         <motion.button
           initial={{ opacity: 0, y: -8 }}

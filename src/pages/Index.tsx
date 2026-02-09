@@ -12,6 +12,8 @@ import { CanvasContextMenu } from "@/components/canvas/CanvasContextMenu";
 import { IntelNodeShapeUtil } from "@/components/canvas/intel-node/IntelNodeShapeUtil";
 import { useAutoLinker } from "@/components/canvas/intel-node/useAutoLinker";
 import { useCanvasDrop } from "@/hooks/useCanvasDrop";
+import { useSmartLayout } from "@/hooks/useSmartLayout";
+import { useCanvasExport } from "@/hooks/useCanvasExport";
 import { IntelNodeShape, INTEL_NODE_TYPE } from "@/components/canvas/intel-node/types";
 
 const customShapeUtils = [IntelNodeShapeUtil];
@@ -38,6 +40,8 @@ const Index = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   useAutoLinker(editor);
+  const { applyLayout } = useSmartLayout(editor);
+  const { exportAsPng, exportAsSvg } = useCanvasExport(editor);
 
   const { isDraggingOver, handleDrop, handleDragOver, handleDragEnter, handleDragLeave } =
     useCanvasDrop(editor, canvasRef);
@@ -58,7 +62,13 @@ const Index = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
-      <CanvasHeader onToggleAnalyst={() => setAnalystOpen(!analystOpen)} analystOpen={analystOpen} />
+      <CanvasHeader
+        onToggleAnalyst={() => setAnalystOpen(!analystOpen)}
+        analystOpen={analystOpen}
+        onSmartLayout={applyLayout}
+        onExportPng={exportAsPng}
+        onExportSvg={exportAsSvg}
+      />
 
       <div
         ref={canvasRef}

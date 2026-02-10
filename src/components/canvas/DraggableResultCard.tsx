@@ -28,7 +28,7 @@ export const DraggableResultCard = ({ result }: DraggableResultCardProps) => {
       confidence: result.confidence,
       entityType: result.type,
     };
-    e.dataTransfer.setData("application/icarus-node", JSON.stringify(data));
+    e.dataTransfer.setData("application/atlas-node", JSON.stringify(data));
     e.dataTransfer.effectAllowed = "copy";
   };
 

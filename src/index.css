@@ -427,21 +427,52 @@
     }
   }
 
-  /* tldraw Shape Enhancements */
+  /* tldraw Arrow / Connector Enhancements */
   .tl-shape[data-shape-type="arrow"] path {
-    filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.8));
+    filter:
+      drop-shadow(0 0 6px hsl(var(--neon-cyan) / 0.6))
+      drop-shadow(0 0 14px hsl(var(--neon-cyan) / 0.3))
+      drop-shadow(0 0 28px hsl(var(--neon-cyan) / 0.15));
+    stroke-width: 2.5px !important;
+    stroke-dasharray: 8, 6;
+    animation: flow-dash 1.2s linear infinite, arrow-glow-pulse 3s ease-in-out infinite;
+  }
+
+  .tl-shape[data-shape-type="arrow"]:hover path {
+    filter:
+      drop-shadow(0 0 10px hsl(var(--neon-cyan) / 0.9))
+      drop-shadow(0 0 24px hsl(var(--neon-cyan) / 0.5))
+      drop-shadow(0 0 48px hsl(var(--neon-cyan) / 0.25));
     stroke-width: 3px !important;
-    stroke-dasharray: 10, 5;
-    animation: flow-dash 2s linear infinite;
+  }
+
+  /* Arrow label glow */
+  .tl-shape[data-shape-type="arrow"] .tl-arrow-label {
+    filter: drop-shadow(0 0 6px hsl(var(--neon-cyan) / 0.4));
   }
 
   @keyframes flow-dash {
     from {
-      stroke-dashoffset: 30;
+      stroke-dashoffset: 28;
     }
-
     to {
       stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes arrow-glow-pulse {
+    0%, 100% {
+      opacity: 0.85;
+      filter:
+        drop-shadow(0 0 6px hsl(var(--neon-cyan) / 0.6))
+        drop-shadow(0 0 14px hsl(var(--neon-cyan) / 0.3));
+    }
+    50% {
+      opacity: 1;
+      filter:
+        drop-shadow(0 0 10px hsl(var(--neon-cyan) / 0.8))
+        drop-shadow(0 0 22px hsl(var(--neon-cyan) / 0.45))
+        drop-shadow(0 0 40px hsl(var(--neon-cyan) / 0.2));
     }
   }
 

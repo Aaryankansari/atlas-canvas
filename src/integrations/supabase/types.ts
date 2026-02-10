@@ -34,6 +34,7 @@ export type Database = {
           scan_mode: string
           summary: string | null
           threat_profile: Json | null
+          user_id: string | null
         }
         Insert: {
           ai_bio?: string | null
@@ -54,6 +55,7 @@ export type Database = {
           scan_mode?: string
           summary?: string | null
           threat_profile?: Json | null
+          user_id?: string | null
         }
         Update: {
           ai_bio?: string | null
@@ -74,6 +76,7 @@ export type Database = {
           scan_mode?: string
           summary?: string | null
           threat_profile?: Json | null
+          user_id?: string | null
         }
         Relationships: []
       }

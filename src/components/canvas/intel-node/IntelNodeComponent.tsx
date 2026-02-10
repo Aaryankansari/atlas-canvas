@@ -43,7 +43,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
         flexDirection: "column",
         gap: 12,
         fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
-        color: "hsl(var(--foreground))",
+        color: "#1a1a1a",
         overflow: "hidden",
         cursor: "pointer",
         position: "relative",
@@ -93,7 +93,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
               overflow: "hidden",
               textOverflow: "ellipsis",
               lineHeight: 1.2,
-              color: "hsl(var(--foreground))",
+              color: "#1a1a1a",
             }}
           >
             {label}
@@ -101,7 +101,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           <div
             style={{
               fontSize: 11,
-              color: "hsl(var(--muted-foreground))",
+              color: "#666",
               textTransform: "uppercase",
               marginTop: 2,
               letterSpacing: "0.05em",
@@ -136,7 +136,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           style={{
             fontSize: 13,
             lineHeight: 1.6,
-            color: "hsl(var(--muted-foreground))",
+            color: "#444",
             overflow: "hidden",
             textOverflow: "ellipsis",
             display: "-webkit-box",
@@ -172,7 +172,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
           <span
             style={{
               fontSize: 11,
-              color: "hsl(var(--muted-foreground))",
+              color: "#666",
               textTransform: "capitalize",
               letterSpacing: "0.02em",
               fontWeight: 600,
@@ -196,7 +196,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
             >
               {indicatorCount}
             </span>
-            <span style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", fontWeight: 500 }}>
+            <span style={{ fontSize: 10, color: "#888", fontWeight: 500 }}>
               Pivots
             </span>
           </div>

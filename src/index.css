@@ -493,17 +493,17 @@
   }
 }
 
-/* tldraw theme overrides — Deep dark */
+/* tldraw theme overrides — White canvas */
 .tl-container {
-  --color-background: hsl(240 10% 3%) !important;
-  --color-text: hsl(0 0% 98%) !important;
+  --color-background: hsl(0 0% 100%) !important;
+  --color-text: hsl(240 10% 10%) !important;
   --color-panel: hsl(240 10% 5%) !important;
   --color-muted: hsl(240 10% 15%) !important;
   --color-divider: hsl(240 10% 12%) !important;
 }
 
 .tl-background {
-  background-color: hsl(240 10% 3%) !important;
+  background-color: hsl(0 0% 100%) !important;
 }
 
 canvas {

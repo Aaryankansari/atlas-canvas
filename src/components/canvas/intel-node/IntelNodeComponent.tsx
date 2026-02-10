@@ -33,7 +33,7 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
 
   return (
     <div
-      className={`glass-panel data-float relative premium-glow-border ${isWatched ? "radar-pulse glow-cyan" : ""}`}
+      className={`data-float relative premium-glow-border ${isWatched ? "radar-pulse glow-cyan" : ""}`}
       style={{
         width: "100%",
         height: "100%",
@@ -44,6 +44,9 @@ export const IntelNodeComponent = ({ shape }: IntelNodeComponentProps) => {
         gap: 12,
         fontFamily: "'Inter', -apple-system, system-ui, sans-serif",
         color: "#1a1a1a",
+        background: "rgba(255, 255, 255, 0.95)",
+        border: "1px solid rgba(0, 0, 0, 0.08)",
+        boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03)",
         overflow: "hidden",
         cursor: "pointer",
         position: "relative",

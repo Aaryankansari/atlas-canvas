@@ -252,37 +252,13 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     const entityType = detectEntityType(query);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      const response = await fetch(`${apiUrl}/api/scan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim(), mode: scanMode }),
+      const endpoint = scanMode === "deep" ? "deep-search" : "osint-scan";
+      const { data, error } = await supabase.functions.invoke(endpoint, {
+        body: { query: query.trim(), entityType },
       });
-
-      if (!response.ok) {
-        throw new Error(`Engine offline: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      if (error) throw error;
       processScanResult(data, entityType, query.trim());
       setScannedQuery(query);
-    } catch (err: any) {
-      console.error("Scan failed:", err);
-      toast.error(err.message || "OSINT Engine unreachable. Ensure backend is running.");
-
-      // Fallback to Supabase if local fails (optional, based on your preference)
-      /*
-      try {
-        const endpoint = scanMode === "deep" ? "deep-search" : "osint-scan";
-        const { data, error } = await supabase.functions.invoke(endpoint, {
-          body: { query: query.trim(), entityType },
-        });
-        if (error) throw error;
-        processScanResult(data, entityType, query.trim());
-      } catch (supaErr) {
-        toast.error("Cloud fallback also failed.");
-      }
-      */
     } finally {
       setScanning(false);
     }
@@ -295,15 +271,13 @@ export const AnalystPanel = ({ isOpen, onClose, editor, selectedCount }: Analyst
     for (const entity of entities) {
       const entityType = detectEntityType(entity);
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
-        const response = await fetch(`${apiUrl}/api/scan`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: entity.trim(), mode: scanMode }),
+        const endpoint = scanMode === "deep" ? "deep-search" : "osint-scan";
+        const { data, error: fnError } = await supabase.functions.invoke(endpoint, {
+          body: { query: entity.trim(), entityType },
         });
 
-        if (response.ok) {
-          const data = await response.json();
+        if (!fnError && data) {
+          // data already available from supabase.functions.invoke
           // Save each result
           await saveInvestigation({
             query: entity.trim(),
